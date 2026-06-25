@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JobTailor — AI resume & cover-letter tailoring</title>
+<style>
+  :root{--bg:#0f172a;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--brand:#2563eb;--brand-d:#1d4ed8;--ok:#16a34a;--warn:#d97706;--soft:#f1f5f9}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:linear-gradient(180deg,#eef2ff,#f8fafc 240px);min-height:100vh;line-height:1.5}
+  header.top{background:var(--bg);color:#fff;padding:22px 20px}
+  .wrap{max-width:960px;margin:0 auto;padding:0 16px}
+  header.top h1{margin:0;font-size:22px}
+  header.top p{margin:6px 0 0;color:#cbd5e1;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin:18px 0;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+  .card h2{margin:0 0 4px;font-size:16px}
+  .step{display:inline-block;background:var(--brand);color:#fff;border-radius:999px;font-size:12px;padding:2px 9px;margin-right:8px;vertical-align:middle}
+  .hint{color:var(--muted);font-size:13px;margin:2px 0 14px}
+  label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+  input[type=text],input[type=password],textarea,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 11px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink)}
+  textarea{resize:vertical}
+  .row{display:flex;gap:12px;flex-wrap:wrap}
+  .row>div{flex:1;min-width:160px}
+  button{cursor:pointer;border:none;border-radius:9px;font-size:14px;font-weight:600;padding:10px 16px}
+  .btn{background:var(--brand);color:#fff}.btn:hover{background:var(--brand-d)}.btn:disabled{background:#94a3b8;cursor:not-allowed;opacity:.7}
+  .btn-ghost{background:var(--soft);color:var(--ink);border:1px solid var(--line)}
+  .btn-sm{padding:7px 12px;font-size:13px}
+  .muted{color:var(--muted)}
+  .check{display:flex;align-items:center;gap:7px;font-weight:600;font-size:13px}.check input{width:auto}
+  .grid-jobs{display:grid;gap:10px}
+  .job{border:1px solid var(--line);border-radius:11px;padding:12px 14px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .job:hover{border-color:#c7d2fe;background:#fafbff}
+  .job .t{font-weight:600;font-size:14px}
+  .job .s{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .job .why{font-size:12.5px;color:#3730a3;margin-top:4px;font-style:italic}
+  .tag{display:inline-block;font-size:11px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:6px}
+  .tag-rem{background:#dcfce7;color:#166534}.tag-src{background:#eef2ff;color:#3730a3}
+  .badge{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;white-space:nowrap}
+  .b-hi{background:#dcfce7;color:#166534}.b-mid{background:#fef9c3;color:#854d0e}.b-lo{background:#f1f5f9;color:#475569}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tab{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600}
+  .tab.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .panel{display:none}.panel.active{display:block}
+  pre.out{white-space:pre-wrap;background:#fcfcfd;border:1px solid var(--line);border-radius:10px;padding:16px;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;max-height:460px;overflow:auto}
+  .docframe{width:100%;height:600px;border:1px solid var(--line);border-radius:10px;background:#fff}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+  .gap li{margin:3px 0}
+  .note{font-size:12.5px;background:#fffbeb;border:1px solid #fde68a;color:#854d0e;border-radius:9px;padding:10px 12px;margin-top:10px}
+  .bnr{border-radius:10px;padding:11px 14px;margin:12px 0;font-size:13px;font-weight:600;background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+  .ok{color:var(--ok);font-weight:600}.err{color:#b91c1c;font-weight:600}.warn{color:var(--warn);font-weight:600}
+  details.settings{border:1px solid var(--line);border-radius:12px;padding:6px 14px;background:#fff;margin:18px 0}
+  summary{cursor:pointer;font-size:14px;font-weight:700;padding:8px 0}
+  .subhead{font-size:13px;font-weight:700;color:#334155;margin:14px 0 2px;border-top:1px solid var(--line);padding-top:12px}
+  .spinner{display:inline-block;width:15px;height:15px;border:2px solid #cbd5e1;border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;vertical-align:-2px;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .hidden{display:none}
+  footer{color:var(--muted);font-size:12px;text-align:center;padding:24px 0 40px}
+  .pillrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .pill{background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:12px}
+  a{color:var(--brand)}
+  .saved{font-size:12px;color:var(--ok);margin-left:8px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1>JobTailor</h1>
+    <p>Upload your resume, find <b>USA</b> tech jobs (remote or in your state), and let AI read your <b>whole resume</b> to build a polished, tailored resume + cover letter for each. Runs on your computer.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- SETTINGS -->
+  <details class="settings" id="settings" open>
+    <summary>⚙️ Set up once — AI engine & job-site key</summary>
+    <p class="hint" style="margin-top:6px">Keys are remembered on this computer and only used by you. AI is what reads your whole resume and writes the polished documents.</p>
+    <div class="subhead">AI engine</div>
+    <div class="row">
+      <div><label for="provider">Use</label>
+        <select id="provider"><option value="auto">Auto — Claude if available, else Gemini</option><option value="claude">Claude only</option><option value="gemini">Gemini only</option></select>
+      </div>
+      <div><label for="claudeModel">Claude quality</label>
+        <select id="claudeModel"><option value="claude-haiku-4-5-20251001">Haiku 4.5 — fastest & cheapest</option><option value="claude-sonnet-4-6">Sonnet 4.6 — best quality</option></select>
+      </div>
+    </div>
+    <label for="claudeKey">Claude (Anthropic) API key <span class="muted">— top quality, billed per use</span></label>
+    <input type="password" id="claudeKey" placeholder="sk-ant-…" autocomplete="off" />
+    <p class="hint">From <b>console.anthropic.com → API keys</b> (separate from your Claude.ai subscription).</p>
+    <label for="aiKey">Google Gemini API key <span class="muted">— free</span></label>
+    <input type="password" id="aiKey" placeholder="AIza…" autocomplete="off" />
+    <p class="hint">Free at <b>aistudio.google.com → Get API key</b>.</p>
+    <label class="check"><input type="checkbox" id="useAI" checked /> Use AI to read the whole resume and write (recommended)</label>
+    <div class="subhead">Big job sites — Indeed, LinkedIn, ZipRecruiter, Glassdoor</div>
+    <label for="rapidKey">RapidAPI key <span class="muted">(JSearch) — free tier</span></label>
+    <input type="password" id="rapidKey" placeholder="Paste your free RapidAPI key…" autocomplete="off" />
+    <p class="hint">Free at <b>rapidapi.com</b> → search <b>JSearch</b> → Subscribe to <b>Basic (Free)</b> → copy the <b>X-RapidAPI-Key</b>.</p>
+    <div><button class="btn-ghost btn btn-sm" id="checkJobs" type="button">Check job sites</button></div>
+    <div id="jobsStatus" class="hint" style="margin-top:8px"></div>
+    <div style="margin-top:12px"><button class="btn-ghost btn btn-sm" id="saveKeys" type="button">Save on this computer</button> <button class="btn-ghost btn btn-sm" id="clearKeys" type="button">Clear saved keys</button> <button class="btn-ghost btn btn-sm" id="checkAI" type="button">Check AI connection</button><span class="saved hidden" id="savedMsg">✓ Saved</span></div>
+    <div id="aiStatus" class="hint" style="margin-top:8px"></div>
+    <p class="hint" style="margin-top:6px">Keys live only in this browser — they are never part of the shared file. Use <b>Clear saved keys</b> before sharing your screen or a computer.</p>
+  </details>
+
+  <!-- STEP 1 -->
+  <div class="card">
+    <h2><span class="step">1</span>Your resume</h2>
+    <p class="hint">Upload a <b>Word (.docx)</b>, <b>PDF</b>, or <b>.txt</b> file — or paste the text. Your name, email, and phone are pulled in automatically.</p>
+    <div class="row"><div style="flex:0 0 auto"><input type="file" id="resumeFile" accept=".txt,.pdf,.docx,.doc" /></div></div>
+    <label for="resumeText">Resume text</label>
+    <textarea id="resumeText" rows="9" placeholder="Paste your full resume here…"></textarea>
+    <div class="row">
+      <div><label for="cName">Your name</label><input type="text" id="cName" placeholder="Jane Doe" /></div>
+      <div><label for="cEmail">Email</label><input type="text" id="cEmail" placeholder="jane@email.com" /></div>
+      <div><label for="cPhone">Phone</label><input type="text" id="cPhone" placeholder="(555) 123-4567" /></div>
+    </div>
+    <div id="aiProfileBox" class="hint" style="margin-top:10px"></div>
+    <div id="skillsDetected" class="pillrow"></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="card">
+    <h2><span class="step">2</span>Find matching USA jobs</h2>
+    <p class="hint">Searches the big sites (if your key is set) plus free sources, keeps only <b>USA</b> roles, then has AI rank them by fit to your whole background.</p>
+    <div class="row">
+      <div style="flex:2"><label for="kw">Role / keywords <span class="muted">(optional — AI can infer from your resume)</span></label><input type="text" id="kw" placeholder="e.g. software engineer, python" /></div>
+      <div><label for="stateInput">US State (optional)</label><input type="text" id="stateInput" placeholder="e.g. California or CA" /></div>
+    </div>
+    <div style="margin-top:10px"><label class="check"><input type="checkbox" id="remoteChk" checked /> Include remote (US) jobs</label></div>
+    <p class="hint" style="margin-top:6px">Leave State blank to see <b>all US jobs</b> (remote + onsite). Add a State to focus there (remote still included). Uncheck the box to hide remote-only roles.</p>
+    <div class="toolbar" style="margin-top:10px">
+      <button class="btn" id="findBtn">Find jobs</button>
+      <button class="btn-ghost btn" id="manualToggle" type="button">Or paste a specific job ▾</button>
+    </div>
+    <div id="manualBox" class="hidden">
+      <div class="row">
+        <div><label for="mTitle">Job title</label><input type="text" id="mTitle" placeholder="Senior Backend Engineer" /></div>
+        <div><label for="mCompany">Company</label><input type="text" id="mCompany" placeholder="Acme Inc." /></div>
+        <div><label for="mUrl">Job link (optional)</label><input type="text" id="mUrl" placeholder="https://…" /></div>
+      </div>
+      <label for="mDesc">Paste the job description</label>
+      <textarea id="mDesc" rows="6" placeholder="Paste the full job posting text…"></textarea>
+      <div class="toolbar" style="margin-top:10px"><button class="btn" id="useManualBtn">Tailor for this job →</button></div>
+    </div>
+    <div id="searchStatus" class="hint" style="margin-top:12px"></div>
+    <div id="aiBanner"></div>
+    <div id="exportRow" class="hidden" style="margin:0 0 10px"><button class="btn-ghost btn btn-sm" id="exportBtn" type="button">⬇ Export all jobs to Excel</button></div>
+    <div id="jobResults" class="grid-jobs"></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="card hidden" id="outCard">
+    <h2><span class="step">3</span>Your tailored application</h2>
+    <p class="hint" id="outFor"></p>
+    <div class="tabs" style="margin-top:6px">
+      <div class="tab active" data-tab="resume">Tailored résumé</div>
+      <div class="tab" data-tab="cover">Cover letter</div>
+      <div class="tab" data-tab="apply">How to apply</div>
+      <div class="tab" data-tab="gap">Match & gaps</div>
+    </div>
+    <div class="panel active" data-panel="resume">
+      <div class="toolbar">
+        <button class="btn btn-sm dl" onclick="downloadPDF('resume')">⬇ PDF</button>
+        <button class="btn-ghost btn btn-sm dl" onclick="downloadWord('resume')">⬇ Word</button>
+        <button class="btn-ghost btn btn-sm dl" onclick="copyText('resume')">Copy text</button>
+        <span class="muted" style="font-size:12px">Preview matches the download.</span>
+      </div>
+      <iframe id="frameResume" class="docframe" title="Tailored resume preview"></iframe>
+    </div>
+    <div class="panel" data-panel="cover">
+      <div class="toolbar">
+        <button class="btn btn-sm dl" onclick="downloadPDF('cover')">⬇ PDF</button>
+        <button class="btn-ghost btn btn-sm dl" onclick="downloadWord('cover')">⬇ Word</button>
+        <button class="btn-ghost btn btn-sm dl" onclick="copyText('cover')">Copy text</button>
+      </div>
+      <iframe id="frameCover" class="docframe" title="Cover letter preview"></iframe>
+    </div>
+    <div class="panel" data-panel="apply">
+      <div class="toolbar"><button class="btn btn-sm dl" onclick="downloadTxt('apply')">⬇ Download (text)</button><button class="btn-ghost btn btn-sm dl" onclick="copyText('apply')">Copy</button></div>
+      <pre class="out" id="outApply"></pre>
+    </div>
+    <div class="panel" data-panel="gap"><div id="outGap"></div></div>
+  </div>
+
+  <footer>JobTailor • runs in your browser • your resume is sent only to the AI engine you choose, and to the job-search API for keywords</footer>
+</div>
+
+<script>
+/* ===================== JobTailor — local AI app ===================== */
+const $ = (s)=>document.querySelector(s);
+const $$ = (s)=>Array.from(document.querySelectorAll(s));
+const cap = (w)=>w.charAt(0).toUpperCase()+w.slice(1);
+
+/* ---------- Settings ---------- */
+const settings = {rapidKey:"", geminiKey:"", claudeKey:"", provider:"auto", claudeModel:"claude-haiku-4-5-20251001", useAI:true};
+/* ═══════════ PERSONAL USE: paste your own keys between the quotes to bake them into this file. ═══════════
+   If you fill these in, DO NOT share this file — the keys would travel with it. Leave blank to use the Settings boxes. */
+const HARDCODED = { rapidKey:"", geminiKey:"", claudeKey:"" };
+function loadSettings(){ try{ Object.assign(settings, JSON.parse(localStorage.getItem("jobtailor")||"{}")); }catch(e){}
+  ["rapidKey","geminiKey","claudeKey"].forEach(k=>{ if(!settings[k] && HARDCODED[k]) settings[k]=HARDCODED[k]; }); }
+function saveSettings(){ try{ localStorage.setItem("jobtailor", JSON.stringify(settings)); }catch(e){} }
+
+/* ---------- US states ---------- */
+const STATES = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming",DC:"District of Columbia"};
+const STATE_ABBRS=Object.keys(STATES), STATE_NAMES=Object.values(STATES);
+function stateForms(input){ const s=(input||"").trim(); const low=s.toLowerCase(); if(!s) return null;
+  for(const [a,n] of Object.entries(STATES)){ if(low===a.toLowerCase()||low===n.toLowerCase()) return {abbr:a,name:n,isState:true}; }
+  for(const [a,n] of Object.entries(STATES)){ if(low.length>=4 && n.toLowerCase().includes(low)) return {abbr:a,name:n,isState:true}; }
+  return {abbr:"", name:s, isState:false}; }
+function isRemote(job){ if(job.remote===true) return true; return /\b(remote|anywhere|work[\s-]?from[\s-]?home|wfh|distributed|telecommute)\b/i.test((job.location||"")+" "+(job.title||"")); }
+function locationMatchesState(job,f){ const loc=(job.location||"").toLowerCase(); if(!loc||!f) return false;
+  if(f.name && loc.includes(f.name.toLowerCase())) return true;
+  if(f.isState && f.abbr && new RegExp("(^|[^a-z])"+f.abbr.toLowerCase()+"([^a-z]|$)").test(loc)) return true; return false; }
+
+/* ---------- USA gate ---------- */
+const US_WORDS=/\b(united states|u\.?s\.?a?\.?|usa)\b/i;
+const NONUS=/\b(united kingdom|uk|england|scotland|wales|ireland|canada|india|germany|deutschland|france|spain|italy|netherlands|belgium|sweden|norway|denmark|finland|poland|portugal|switzerland|austria|australia|new zealand|singapore|philippines|malaysia|indonesia|japan|china|hong kong|taiwan|korea|brazil|mexico|argentina|chile|colombia|peru|south africa|nigeria|kenya|egypt|israel|uae|dubai|saudi|qatar|pakistan|bangladesh|sri lanka|vietnam|thailand|turkey|greece|romania|hungary|czech|ukraine|russia|estonia|latvia|lithuania|bulgaria|croatia|serbia|slovakia|slovenia|luxembourg|iceland|latin america|asia pacific|asia|africa|middle east|oceania|europe|emea|apac|latam)\b/i;
+function hasUSState(loc){ if(!loc) return false;
+  if(STATE_NAMES.some(n=> new RegExp("\\b"+n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")+"\\b","i").test(loc))) return true;
+  const m=loc.match(/,\s*([A-Za-z]{2})\b/); return !!(m && STATE_ABBRS.includes(m[1].toUpperCase())); }
+function isUSA(job){ const loc=job.location||"";
+  if(job.country){ const cc=String(job.country).trim().toUpperCase(); if(cc==="US"||cc==="USA"||/united states/i.test(job.country)) return true; if(cc && cc!=="US" && cc.length<=3) return false; }
+  if(NONUS.test(loc)) return false; if(US_WORDS.test(loc)) return true; if(hasUSState(loc)) return true; if(isRemote(job)) return true; return false; }
+function passesLocation(job, opts){ if(!isUSA(job)) return false; const f=stateForms(opts.state);
+  if(f){ if(locationMatchesState(job,f)) return true; if(opts.includeRemote && isRemote(job)) return true; return false; }
+  if(!opts.includeRemote && isRemote(job)) return false; return true; }
+
+/* ---------- Keyword dictionary (fallback + skills chips) ---------- */
+const SKILLS=["javascript","typescript","python","java","c++","c#","go","golang","rust","ruby","php","swift","kotlin","scala","r","matlab","sql","bash","shell","perl","react","react.js","angular","vue","vue.js","svelte","next.js","nextjs","redux","html","css","sass","tailwind","bootstrap","webpack","vite","jquery","node","node.js","express","django","flask","fastapi","spring","spring boot","rails","ruby on rails",".net","asp.net","laravel","graphql","rest","rest api","grpc","microservices","api","pandas","numpy","spark","hadoop","kafka","airflow","etl","data pipeline","tableau","power bi","looker","dbt","snowflake","redshift","bigquery","databricks","machine learning","deep learning","tensorflow","pytorch","scikit-learn","nlp","computer vision","llm","mlops","data science","statistics","aws","azure","gcp","google cloud","docker","kubernetes","k8s","terraform","ansible","jenkins","ci/cd","github actions","gitlab","circleci","linux","nginx","serverless","lambda","postgresql","postgres","mysql","mongodb","redis","elasticsearch","dynamodb","cassandra","oracle","sqlite","nosql","agile","scrum","kanban","tdd","unit testing","integration testing","code review","system design","oop","design patterns","data structures","algorithms","git","jira","confluence","figma","selenium","cypress","playwright","postman","full stack","full-stack","frontend","front-end","backend","back-end","devops","sre","data engineer","data scientist","software engineer","security","cybersecurity","qa","automation","cloud","embedded","mobile","ios","android","flutter","react native","itil","itsm","servicenow","bmc remedy","incident management","problem management","change management","major incident","incident response","root cause analysis","appdynamics","dynatrace","splunk","datadog","grafana","prometheus","new relic","observability","sccm","active directory","vmware","citrix","help desk","service desk","desktop support","technical support","it support","network operations","sla","stakeholder management","vendor management","project management","program management","pmp","scrum master","product owner","business analysis","requirements gathering","powershell","sharepoint","office 365","microsoft 365","copilot","microsoft teams","zendesk","windows server","escalation management","service management","service delivery","operations management"];
+function detectSkills(text){ const t=" "+text.toLowerCase().replace(/[\n\t]/g," ")+" "; const found=[];
+  for(const s of SKILLS){ const esc=s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"); if(new RegExp("(^|[^a-z0-9])"+esc+"([^a-z0-9]|$)","i").test(t)) found.push(s); }
+  return Array.from(new Set(found)); }
+function scoreMatch(resumeSkills, jobText){ const js=detectSkills(jobText); if(!js.length) return {score:50,matched:[],missing:[]};
+  const rset=new Set(resumeSkills.map(s=>s.toLowerCase())); const matched=js.filter(s=>rset.has(s.toLowerCase())); const missing=js.filter(s=>!rset.has(s.toLowerCase()));
+  return {score:Math.max(5,Math.min(99,Math.round(100*matched.length/js.length))),matched,missing}; }
+function topMatching(resumeSkills,job,n){ return scoreMatch(resumeSkills,job.description+" "+job.title).matched.slice(0,n||8); }
+// Adaptive: prefer the AI's per-resume skills/keywords; fall back to the keyword dictionary only when AI is off.
+function effectiveResumeSkills(){ const p=CURRENT&&CURRENT.profile||{}; const ai=[].concat(Array.isArray(p.core_skills)?p.core_skills:[], Array.isArray(p.fields)?p.fields:[]);
+  return Array.from(new Set(ai.concat(CURRENT&&CURRENT.skills||[]).map(s=>String(s||"").trim().toLowerCase()).filter(s=>s.length>1))); }
+function overlapCount(job, skills){ const hay=((job.title||"")+" "+(job.description||"")).toLowerCase(); return (skills||[]).filter(s=>hay.includes(s)).length; }
+
+/* ---------- Contact extraction (robust) ---------- */
+function extractContact(text){
+  const email=(text.match(/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i)||[])[0]||"";
+  let phone=""; const pm=text.match(/(\+?\d{1,2}[\s.\-]?)?\(?\d{3}\)?[\s.\-]?\d{3}[\s.\-]?\d{4}/); if(pm) phone=pm[0].trim();
+  let name=""; const lines=text.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  for(const l of lines.slice(0,6)){
+    if(l.includes("@")||/\d{3}/.test(l)||/https?:|linkedin|github|resume|curriculum/i.test(l)) continue;
+    const words=l.split(/\s+/);
+    if(l.length>=3 && l.length<=46 && words.length<=5 && /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'\-]*(\s+[A-Za-zÀ-ÿ.'\-]+){0,4}$/.test(l)){ name=l.replace(/[,|].*$/,"").trim(); break; }
+  }
+  let location=""; const lm=text.match(/\b([A-Z][a-zA-Z.\-]+(?:\s[A-Z][a-zA-Z.\-]+)*),\s*([A-Z]{2})\b/);
+  if(lm && STATE_ABBRS.includes(lm[2])) location=lm[1]+", "+lm[2];
+  return {name,email,phone,location};
+}
+// Best-effort role/title guess from the top of a resume (used when AI is off)
+function guessRole(resume){ const lines=(resume||"").split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
+  const roleRe=/\b(manager|engineer|analyst|developer|administrator|admin|specialist|lead|leader|director|consultant|architect|coordinator|technician|designer|nurse|accountant|representative|supervisor|officer|scientist|recruiter|controller|planner|strategist|associate|operations|support)\b/i;
+  for(const l of lines.slice(0,6)){ if(l.includes("@")||/\d{3}/.test(l)||/https?:|linkedin|github/i.test(l)) continue; if(roleRe.test(l) && l.length>=3 && l.length<=60) return l.replace(/[•|,].*$/,"").replace(/[&]/g," ").replace(/\s+/g," ").trim(); }
+  return ""; }
+
+/* ===================== JOB SOURCES (USA-focused, broad) ===================== */
+function withTimeout(ms){ const c=new AbortController(); const t=setTimeout(()=>c.abort(),ms||10000); return {signal:c.signal,done:()=>clearTimeout(t)}; }
+async function getJSON(url,opts){ opts=opts||{}; const to=withTimeout(opts.ms);
+  try{ const r=await fetch(url,{signal:to.signal,headers:Object.assign({"Accept":"application/json"},opts.headers||{})}); if(!r.ok){ let b=""; try{ b=(await r.text()).slice(0,220).replace(/\s+/g," ").trim(); }catch(e){} throw new Error("HTTP "+r.status+(b?(" — "+b):"")); } return await r.json(); }
+  finally{ to.done(); } }
+function stripHtml(s){ const d=document.createElement("div"); d.innerHTML=s||""; return (d.textContent||"").replace(/\s+/g," ").trim(); }
+async function fetchJobicy(kw){ const tag=encodeURIComponent((kw.split(/[,\s]+/)[0]||"developer"));
+  const d=await getJSON(`https://jobicy.com/api/v2/remote-jobs?count=50&tag=${tag}`);
+  return (d.jobs||[]).map(j=>({title:j.jobTitle||"",company:j.companyName||"",location:j.jobGeo||"Remote",url:j.url||"",description:stripHtml(j.jobExcerpt||j.jobDescription||""),source:"Jobicy",remote:true,country:/usa|united states|anywhere|worldwide/i.test(j.jobGeo||"")?"US":""})); }
+async function fetchMuse(kw){ const cats=["Software Engineering","Data Science","Data and Analytics","IT"]; const combos=[];
+  cats.forEach(c=>{ combos.push([c,1]); combos.push([c,2]); });
+  const results=await Promise.all(combos.map(([c,pg])=>getJSON(`https://www.themuse.com/api/public/jobs?category=${encodeURIComponent(c)}&page=${pg}`).catch(()=>null)));
+  const out=[]; results.forEach(d=>{ if(!d) return; (d.results||[]).forEach(j=>{ const loc=(j.locations&&j.locations[0]&&j.locations[0].name)||"Flexible";
+    out.push({title:j.name||"",company:(j.company&&j.company.name)||"",location:loc,url:(j.refs&&j.refs.landing_page)||"",description:stripHtml(j.contents||""),source:"The Muse",remote:/remote|flexible|anywhere/i.test(loc)}); }); });
+  return out; }
+async function fetchRemotive(kw){ const q=encodeURIComponent(kw.split(/[,\s]+/).slice(0,3).join(" ")||"developer");
+  const d=await getJSON(`https://remotive.com/api/remote-jobs?search=${q}&limit=50`);
+  return (d.jobs||[]).map(j=>({title:j.title||"",company:j.company_name||"",location:j.candidate_required_location||"Remote",url:j.url||"",description:stripHtml(j.description||""),source:"Remotive",remote:true,country:/usa|united states|anywhere|worldwide/i.test(j.candidate_required_location||"")?"US":""})); }
+// Find the jobs array inside any JSearch response shape (v1 array, v2 nested object, etc.)
+function pickJobs(d){ if(!d) return []; if(Array.isArray(d)) return d;
+  const direct=[d.data,d.jobs,d.results,(d.data&&d.data.jobs),(d.data&&d.data.data),(d.data&&d.data.results)];
+  for(const c of direct){ if(Array.isArray(c)) return c; }
+  let found=[]; (function walk(o,depth){ if(found.length||!o||depth>5) return;
+    if(Array.isArray(o)){ if(o.length&&o[0]&&typeof o[0]==="object"&&(o[0].job_title||o[0].job_id||o[0].title)){ found=o; return; } for(const x of o){ walk(x,depth+1); if(found.length) return; } return; }
+    if(typeof o==="object"){ for(const k in o){ walk(o[k],depth+1); if(found.length) return; } } })(d,0);
+  return found; }
+// JSearch raw fetch — current /search-v2 endpoint, falling back to legacy /search
+async function jsearchRaw(q){ const key=(settings.rapidKey||"").trim(); if(!key) throw new Error("NO_KEY");
+  const headers={"X-RapidAPI-Key":key,"X-RapidAPI-Host":"jsearch.p.rapidapi.com"};
+  const d=await getJSON("https://jsearch.p.rapidapi.com/search-v2?query="+encodeURIComponent(q)+"&country=us",{ms:25000,headers});
+  return pickJobs(d); }
+function jsQuery(kw){ let q=(kw||"developer").replace(/[,;]+/g," ").replace(/\s+/g," ").trim(); q=q.replace(/\s+in\s+.*$/i,""); return q.split(" ").slice(0,4).join(" ")||"developer"; }
+async function fetchJSearch(kw,opts,publisher){ if(!(settings.rapidKey||"").trim()) return [];
+  const f=stateForms(opts.state); let q=jsQuery(kw); q+= f ? (" in "+f.name) : " in United States"; if(publisher) q+=" via "+publisher;
+  const arr=await jsearchRaw(q);
+  return (arr||[]).map(j=>({title:j.job_title||"",company:j.employer_name||"",location:j.job_is_remote?"Remote (US)":([j.job_city,j.job_state].filter(Boolean).join(", ")||j.job_country||""),url:j.job_apply_link||j.job_google_link||"",description:j.job_description||"",source:j.job_publisher?("via "+j.job_publisher):"Big sites",remote:!!j.job_is_remote,country:j.job_country||""})); }
+async function searchAllSources(queries,opts){
+  let qs=(Array.isArray(queries)?queries:[queries]).map(s=>String(s||"").trim()).filter(Boolean).slice(0,2); if(!qs.length) qs=["developer"];
+  const tasks=[];
+  if((settings.rapidKey||"").trim()){
+    qs.forEach((q,i)=>tasks.push([(i===0?"Big boards":("Big boards: "+q)),fetchJSearch(q,opts)]));
+    tasks.push(["Monster",fetchJSearch(qs[0],opts,"monster")]);
+  }
+  const settled=await Promise.allSettled(tasks.map(t=>t[1])); let jobs=[],ok=[],failed=[],failReasons=[];
+  settled.forEach((r,i)=>{ const n=tasks[i][0]; if(r.status==="fulfilled"&&r.value.length){ jobs=jobs.concat(r.value); ok.push(n);} else if(r.status==="rejected"){ failed.push(n); failReasons.push(n+" → "+String((r.reason&&r.reason.message)||r.reason||"no response").slice(0,150)); } });
+  const seen=new Set(); jobs=jobs.filter(j=>{ const k=(j.title+"@"+j.company).toLowerCase(); if(seen.has(k))return false; seen.add(k); return j.title; });
+  return {jobs,ok,failed,failReasons};
+}
+
+/* ===================== AI ENGINE ===================== */
+function aiProvider(){ const c=(settings.claudeKey||"").trim(), g=(settings.geminiKey||"").trim(); if(!settings.useAI) return null;
+  if(settings.provider==="claude") return c?"claude":(g?"gemini":null);
+  if(settings.provider==="gemini") return g?"gemini":(c?"claude":null);
+  return c?"claude":(g?"gemini":null); }
+function extractJSON(text){ if(!text) return null; try{ return JSON.parse(text); }catch(e){}
+  const a=text.indexOf("["), o=text.indexOf("{"); let start=-1,close="}";
+  if(a>=0 && (o<0||a<o)){ start=a; close="]"; } else if(o>=0){ start=o; }
+  if(start<0) return null; const end=text.lastIndexOf(close); if(end>start){ try{ return JSON.parse(text.slice(start,end+1)); }catch(e){} } return null; }
+async function aiComplete(prompt, opts){ opts=opts||{}; const p=aiProvider(); if(!p) throw new Error("No AI key set"); const max=opts.max_tokens||1500;
+  if(p==="claude"){
+    const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":(settings.claudeKey||"").trim(),"anthropic-version":"2023-06-01","content-type":"application/json","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:settings.claudeModel||"claude-haiku-4-5-20251001",max_tokens:max,messages:[{role:"user",content:prompt}]})});
+    if(!r.ok){ throw new Error("Claude API "+r.status+" "+(await r.text()).slice(0,200)); }
+    const d=await r.json(); return (d.content||[]).map(b=>b.text||"").join("");
+  } else {
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent((settings.geminiKey||"").trim())}`;
+    const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:max}})});
+    if(!r.ok){ throw new Error("Gemini API "+r.status+" "+(await r.text()).slice(0,200)); }
+    const d=await r.json(); return (((d.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||"";
+  }
+}
+const GUARD="Use ONLY facts present in the resume. Never invent employers, job titles, dates, degrees, numbers, certifications, or skills the person does not have. You may reword, prioritize, and summarize, but every detail must be traceable to the resume.";
+async function aiProfile(resume){
+  const prompt=`Read this resume and return ONLY JSON: {"name":"","email":"","phone":"","location":"city, ST if present","headline":"professional identity","seniority":"","fields":[],"core_skills":[],"summary":"2-3 sentences about real experience","search_queries":["2-3 SHORT, STANDARD job titles a job board would actually list for this person — 2-4 words each, e.g. 'IT Operations Manager', 'Incident Manager', 'Service Delivery Manager'. Plain common titles only; NO long descriptive phrases, NO company-specific wording, NO seniority filler like 'highly experienced'."]}. ${GUARD}\n\nRESUME:\n${resume.slice(0,8000)}`;
+  return extractJSON(await aiComplete(prompt,{max_tokens:800}));
+}
+async function aiRankJobs(profile, resume, jobs){
+  const list=jobs.map((j,i)=>`${i}) ${j.title} — ${j.company} — ${j.location} :: ${(j.description||"").replace(/\s+/g," ").slice(0,360)}`).join("\n");
+  const prof=profile?`CANDIDATE PROFILE: ${JSON.stringify(profile)}`:`RESUME:\n${resume.slice(0,4000)}`;
+  const prompt=`Score how well each job fits this candidate's overall background, judging the whole resume rather than keyword overlap — but be flexible and reward transferable experience. Adjacent roles or a slightly different seniority should still score in the 50-80 range; only clearly unrelated fields (e.g. a nursing job for a software engineer) score below 25. Return ONLY a JSON array, one item per job: [{"i":<index>,"score":<0-100>,"reason":"<short why>"}].\n\n${prof}\n\nJOBS:\n${list}`;
+  const arr=extractJSON(await aiComplete(prompt,{max_tokens:1500})); return Array.isArray(arr)?arr:null;
+}
+async function aiTailorResume(resume, contact, job){
+  const prompt=`Build a polished, tailored resume AND cover letter for this candidate and target job. ${GUARD} Reword and reorder to highlight fit with the job; keep bullets achievement-focused and concise. Return ONLY JSON with EXACTLY these keys:
+{"name":"","title":"a professional title tailored to the target job, grounded in real experience","email":"","phone":"","location":"city, ST if in resume","links":["any portfolio/linkedin/github URLs in the resume"],"summary":"3-4 sentence professional summary tailored to the job","skills":["real skills, most job-relevant first"],"experience":[{"role":"","company":"","location":"","dates":"","bullets":["concise achievement bullets, reworded to fit the job, factual"]}],"education":[{"degree":"","school":"","location":"","dates":"","details":""}],"sections":[{"heading":"e.g. Certifications or Projects","items":["..."]}],"cover_letter":"a complete, natural cover letter of 3-4 short paragraphs addressed to the hiring team"}
+CANDIDATE NAME: ${contact.name||""}
+TARGET JOB TITLE: ${job.title||""}
+COMPANY: ${job.company||""}
+JOB DESCRIPTION:\n${(job.description||"").slice(0,4000)}
+RESUME:\n${resume.slice(0,9000)}`;
+  const parsed=extractJSON(await aiComplete(prompt,{max_tokens:3200}));
+  return parsed?sanitizeData(parsed, contact):null;
+}
+function sanitizeData(x, contact){ x=x||{};
+  x.name=x.name||(contact&&contact.name)||""; x.email=x.email||(contact&&contact.email)||""; x.phone=x.phone||(contact&&contact.phone)||""; x.location=x.location||(contact&&contact.location)||"";
+  x.title=x.title||""; x.summary=x.summary||""; x.cover_letter=x.cover_letter||"";
+  x.links=Array.isArray(x.links)?x.links.filter(Boolean):[];
+  x.skills=Array.isArray(x.skills)?x.skills.filter(Boolean):[];
+  x.experience=Array.isArray(x.experience)?x.experience.map(j=>({role:j.role||"",company:j.company||"",location:j.location||"",dates:j.dates||"",bullets:Array.isArray(j.bullets)?j.bullets.filter(Boolean):[]})):[];
+  x.education=Array.isArray(x.education)?x.education.map(e=>({degree:e.degree||"",school:e.school||"",location:e.location||"",dates:e.dates||"",details:e.details||""})):[];
+  x.sections=Array.isArray(x.sections)?x.sections.filter(s=>s&&s.heading&&Array.isArray(s.items)&&s.items.length).map(s=>({heading:s.heading,items:s.items.filter(Boolean)})):[];
+  return x;
+}
+function fallbackData(resume, contact, job){
+  const skills=detectSkills(resume); const matched=topMatching(skills,job,12);
+  const sum=`Professional with experience aligned to the ${job.title||"target"} role`+(job.company?` at ${job.company}`:"")+(matched.length?`, with strengths in ${matched.slice(0,6).map(pretty).join(", ")}.`:".");
+  const body=`Dear Hiring Team at ${job.company||"your company"},\n\nI am writing to express my strong interest in the ${job.title||"open role"} position. After reviewing the role, I am confident my skills and experience make me a strong fit.\n\n${matched.length?("My experience with "+matched.slice(0,4).map(pretty).join(", ")+" maps directly to what this role requires."):"My background lines up closely with the responsibilities described."}\n\nThank you for your consideration. I would welcome the chance to discuss how my background can support your goals.\n\nSincerely,\n${contact.name||""}`;
+  return {name:contact.name||"",title:job.title||"",email:contact.email||"",phone:contact.phone||"",location:contact.location||"",links:[],summary:sum,skills:(matched.length?matched:skills).map(pretty),experience:[],education:[],sections:[],rawText:resume.trim(),cover_letter:body};
+}
+
+async function aiInterviewQuestions(resume, job){
+  const prompt=`Generate exactly 50 interview questions to help a candidate prepare for THIS specific job. Base them on the job description and the candidate's background. Include a mix of role-specific technical questions, behavioral/STAR questions, problem-solving/scenario questions, and motivation/fit questions. Make them specific to the role and its required skills — avoid generic filler. Number them 1 to 50, one per line, with no extra commentary.\n\nJOB TITLE: ${job.title||""}\nCOMPANY: ${job.company||""}\nJOB DESCRIPTION:\n${(job.description||"").slice(0,4500)}\n\nCANDIDATE RESUME (for depth):\n${resume.slice(0,3000)}`;
+  return (await aiComplete(prompt,{max_tokens:2400})||"").trim();
+}
+function fallbackQuestions(job, skills){
+  const role=job.title||"this role"; const sk=((skills&&skills.length)?skills:detectSkills(job.description||"")).slice(0,20).map(pretty); const qs=[];
+  sk.forEach(s=>qs.push(`Describe a project where you used ${s}, and the impact it had.`));
+  const behav=[`Tell me about yourself and why you're interested in this ${role} position.`,`Walk me through the experience that makes you a strong fit for ${role}.`,"Describe a challenging technical problem you solved and how you approached it.","Tell me about a time you disagreed with a teammate and how you resolved it.","How do you prioritize when juggling multiple deadlines?","Describe a time you failed and what you learned from it.","How do you respond to critical feedback?","Tell me about a time you led or influenced a project without formal authority.","How do you keep your skills current?","Describe a time you improved a process or made something more efficient.","How do you debug a problem you've never seen before?","Tell me about a decision you made with incomplete information.","Why do you want to work for this company?","What are your greatest strengths and one area you're improving?","Describe a time you handled competing priorities under pressure.","Tell me about a time you went above and beyond for a result.","How do you explain technical concepts to non-technical stakeholders?","Describe your ideal team and working environment.","Tell me about your proudest professional achievement.","What questions do you have for the team?"];
+  let i=0; while(qs.length<50){ qs.push(behav[i%behav.length]); i++; }
+  return qs.slice(0,50).map((q,n)=>`${n+1}. ${q}`).join("\n");
+}
+
+/* ---------- Pretty skill names ---------- */
+function titleCase(s){ return (s||"").replace(/\b\w/g,c=>c.toUpperCase()); }
+const ACRONYMS={"aws":"AWS","gcp":"GCP","sql":"SQL","nosql":"NoSQL","api":"API","rest":"REST","rest api":"REST API","ci/cd":"CI/CD","html":"HTML","css":"CSS","php":"PHP","ios":"iOS","nlp":"NLP","llm":"LLM","mlops":"MLOps","qa":"QA","sre":"SRE","oop":"OOP","tdd":"TDD","etl":"ETL","k8s":"K8s","gitlab":"GitLab","github actions":"GitHub Actions","node.js":"Node.js","node":"Node","next.js":"Next.js","nextjs":"Next.js","vue.js":"Vue.js","react.js":"React.js",".net":".NET","asp.net":"ASP.NET","c#":"C#","c++":"C++","postgresql":"PostgreSQL","postgres":"PostgreSQL","mysql":"MySQL","mongodb":"MongoDB","dynamodb":"DynamoDB","power bi":"Power BI","bigquery":"BigQuery","tensorflow":"TensorFlow","pytorch":"PyTorch","scikit-learn":"scikit-learn","golang":"Go","devops":"DevOps","fastapi":"FastAPI","graphql":"GraphQL","jquery":"jQuery","matlab":"MATLAB"};
+function pretty(s){ const k=(s||"").toLowerCase(); return ACRONYMS[k]||titleCase(s); }
+function escapeHtml(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+/* ===================== PROFESSIONAL DOCUMENT RENDERING ===================== */
+function resumeCSS(){ return "@page{margin:0.55in} html,body{margin:0} body{font-family:'Calibri','Segoe UI','Helvetica Neue',Arial,sans-serif;color:#23303f;font-size:10.7pt;line-height:1.42;padding:0.5in 0.6in} .name{font-size:23pt;font-weight:700;color:#16263f;letter-spacing:.4px} .title{font-size:12pt;color:#2557a7;font-weight:600;margin-top:3px} .contact{font-size:9.5pt;color:#5a6573;margin-top:7px} .sec{font-size:10.5pt;font-weight:700;color:#16263f;text-transform:uppercase;letter-spacing:1.2px;border-bottom:2px solid #2557a7;padding-bottom:3px;margin:16px 0 8px} .summary{margin:0} .skills{color:#33404e} .job{margin-bottom:10px} .jobhead{overflow:hidden} .role{font-weight:700;color:#1b232e} .org{color:#2557a7;font-weight:600} .dates{color:#6b7480;font-size:9.5pt;float:right;font-weight:600} ul{margin:4px 0 0;padding-left:17px} li{margin:2px 0} .raw{white-space:pre-wrap;color:#33404e} a{color:#2557a7;text-decoration:none}"; }
+function renderResume(d){
+  const e=escapeHtml; const p=[];
+  const contactBits=[d.email,d.phone,d.location].filter(Boolean).concat(d.links||[]).filter(Boolean);
+  p.push(`<div class="name">${e(d.name||"")}</div>`);
+  if(d.title) p.push(`<div class="title">${e(d.title)}</div>`);
+  if(contactBits.length) p.push(`<div class="contact">${contactBits.map(e).join("&nbsp; • &nbsp;")}</div>`);
+  if(d.summary){ p.push(`<div class="sec">Summary</div>`); p.push(`<div class="summary">${e(d.summary)}</div>`); }
+  if(d.skills&&d.skills.length){ p.push(`<div class="sec">Skills</div>`); p.push(`<div class="skills">${d.skills.map(e).join("&nbsp; • &nbsp;")}</div>`); }
+  if(d.experience&&d.experience.length){ p.push(`<div class="sec">Experience</div>`);
+    d.experience.forEach(j=>{ const head=`<div class="jobhead">${j.dates?`<span class="dates">${e(j.dates)}</span>`:""}<span class="role">${e(j.role||"")}</span>${j.company?` — <span class="org">${e(j.company)}</span>`:""}${j.location?`, ${e(j.location)}`:""}</div>`;
+      const bul=(j.bullets&&j.bullets.length)?`<ul>${j.bullets.map(b=>`<li>${e(b)}</li>`).join("")}</ul>`:""; p.push(`<div class="job">${head}${bul}</div>`); }); }
+  if(d.education&&d.education.length){ p.push(`<div class="sec">Education</div>`);
+    d.education.forEach(ed=>{ p.push(`<div class="job"><div class="jobhead">${ed.dates?`<span class="dates">${e(ed.dates)}</span>`:""}<span class="role">${e(ed.degree||"")}</span>${ed.school?` — <span class="org">${e(ed.school)}</span>`:""}${ed.location?`, ${e(ed.location)}`:""}</div>${ed.details?`<div>${e(ed.details)}</div>`:""}</div>`); }); }
+  (d.sections||[]).forEach(s=>{ if(!s||!s.items||!s.items.length) return; p.push(`<div class="sec">${e(s.heading||"More")}</div>`); p.push(`<ul>${s.items.map(it=>`<li>${e(it)}</li>`).join("")}</ul>`); });
+  if((!d.experience||!d.experience.length) && d.rawText){ p.push(`<div class="sec">Background</div>`); p.push(`<div class="raw">${e(d.rawText)}</div>`); }
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>${resumeCSS()}</style></head><body>${p.join("")}</body></html>`;
+  const t=[]; t.push(d.name||""); if(d.title)t.push(d.title); if(contactBits.length)t.push(contactBits.join("  |  ")); t.push("");
+  if(d.summary){ t.push("SUMMARY"); t.push(d.summary); t.push(""); }
+  if(d.skills&&d.skills.length){ t.push("SKILLS"); t.push(d.skills.join(", ")); t.push(""); }
+  if(d.experience&&d.experience.length){ t.push("EXPERIENCE"); d.experience.forEach(j=>{ t.push(`${j.role||""}${j.company?" — "+j.company:""}${j.dates?"  ("+j.dates+")":""}`); (j.bullets||[]).forEach(b=>t.push("  • "+b)); t.push(""); }); }
+  if(d.education&&d.education.length){ t.push("EDUCATION"); d.education.forEach(ed=>{ t.push(`${ed.degree||""}${ed.school?" — "+ed.school:""}${ed.dates?"  ("+ed.dates+")":""}`); if(ed.details)t.push("  "+ed.details); }); t.push(""); }
+  (d.sections||[]).forEach(s=>{ if(s&&s.items&&s.items.length){ t.push((s.heading||"MORE").toUpperCase()); s.items.forEach(it=>t.push("  • "+it)); t.push(""); } });
+  if((!d.experience||!d.experience.length)&&d.rawText){ t.push("BACKGROUND"); t.push(d.rawText); }
+  return {html, text:t.join("\n")};
+}
+function renderCover(d, contact){
+  const e=escapeHtml; const today=new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"});
+  const name=contact.name||d.name||""; const bits=[contact.email||d.email,contact.phone||d.phone,contact.location||d.location].filter(Boolean);
+  const body=(d.cover_letter||"").trim(); const paras=body.split(/\n{2,}/).map(s=>s.trim()).filter(Boolean);
+  const css="@page{margin:0.9in} html,body{margin:0} body{font-family:'Calibri','Segoe UI','Helvetica Neue',Arial,sans-serif;color:#23303f;font-size:11pt;line-height:1.55;padding:0.7in 0.85in} .sender{font-size:15pt;font-weight:700;color:#16263f} .meta{color:#5a6573;font-size:10pt;margin-top:3px} .date{margin:20px 0 16px;color:#5a6573} p{margin:0 0 12px}";
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>${css}</style></head><body><div class="sender">${e(name)}</div><div class="meta">${bits.map(e).join("&nbsp; • &nbsp;")}</div><div class="date">${e(today)}</div>${paras.map(x=>`<p>${e(x).replace(/\n/g,"<br>")}</p>`).join("")}</body></html>`;
+  const text=`${name}\n${bits.join("  |  ")}\n${today}\n\n${body}`;
+  return {html, text};
+}
+function buildApply(job){ const link=job.url||"(use the apply link on the job posting)"; const company=job.company||"the company";
+  return `HOW TO APPLY — ${job.title||"this role"}${job.company?" @ "+job.company:""}\n${job.source?("Found: "+job.source):""}\n\n1. Open the job posting:\n   ${link}\n\n2. Download your two tailored documents:\n   • Tailored résumé (PDF or Word)\n   • Cover letter (PDF or Word)\n\n3. On the application form:\n   • Upload the tailored résumé.\n   • Paste or upload the cover letter where asked.\n   • Make contact details match your résumé header.\n\n4. Before submitting, check:\n   • Name, email, and phone are correct.\n   • The role title and ${company}'s name are spelled correctly.\n   • The "Match & gaps" tab — add any real skill that's missing.\n\n5. After applying:\n   • Note the date you applied.\n   • A short, polite LinkedIn note to a recruiter can help.\n   • Follow up after ~7 business days.\n\nGood luck!`; }
+
+/* ---------- DOM-dependent below ---------- */
+function buildGap(resumeSkills, job, fitNotes){
+  const m=scoreMatch(resumeSkills,job.description+" "+job.title); const wrap=document.createElement("div");
+  if(fitNotes){ const p=document.createElement("p"); p.className="note"; p.style.background="#eff6ff"; p.style.borderColor="#bfdbfe"; p.style.color="#1e3a8a"; p.innerHTML="<b>Why AI matched you:</b> "+escapeHtml(fitNotes); wrap.appendChild(p); }
+  const head=document.createElement("p"); head.innerHTML=`<b>Keyword overlap: ${m.score}%</b> <span class="muted">(a rough check; AI ranking is the real fit signal)</span>`; wrap.appendChild(head);
+  const mk=(title,arr)=>{ const h=document.createElement("p"); h.style.margin="12px 0 4px"; h.innerHTML=`<b>${title}</b>`; const ul=document.createElement("ul"); ul.className="gap"; if(!arr.length){ const li=document.createElement("li"); li.className="muted"; li.textContent="None"; ul.appendChild(li);} arr.forEach(s=>{ const li=document.createElement("li"); li.innerHTML=`<span class="pill">${pretty(s)}</span>`; ul.appendChild(li); }); wrap.appendChild(h); wrap.appendChild(ul); };
+  mk("✅ Skills you have that this job mentions", m.matched);
+  mk("➕ Skills the job mentions that aren't obvious in your resume", m.missing);
+  const tip=document.createElement("p"); tip.className="note"; tip.innerHTML="Only add a missing skill if you genuinely have it, then re-tailor. JobTailor never invents experience."; wrap.appendChild(tip); return wrap;
+}
+
+let CURRENT={job:null,resume:"",contact:{},skills:[],profile:null,out:{}};
+function fillContactFields(c, force){
+  if(c.name && (force||!$("#cName").value)) $("#cName").value=c.name;
+  if(c.email && (force||!$("#cEmail").value)) $("#cEmail").value=c.email;
+  if(c.phone && (force||!$("#cPhone").value)) $("#cPhone").value=c.phone;
+}
+function refreshResumeMeta(){
+  const text=$("#resumeText").value; const changed=text!==CURRENT.resume; if(changed){ CURRENT.profile=null; } CURRENT.resume=text;
+  fillContactFields(extractContact(text), changed);
+  const skills=detectSkills(text); CURRENT.skills=skills;
+  const box=$("#skillsDetected"); box.innerHTML="";
+  if(skills.length){ const lab=document.createElement("span"); lab.className="hint"; lab.style.width="100%"; lab.style.margin="6px 0 0"; lab.textContent="Detected keywords: "; box.appendChild(lab);
+    skills.slice(0,24).forEach(s=>{ const sp=document.createElement("span"); sp.className="pill"; sp.textContent=pretty(s); box.appendChild(sp); }); }
+}
+function currentContact(){ return {name:$("#cName").value.trim(), email:$("#cEmail").value.trim(), phone:$("#cPhone").value.trim(), location:extractContact(CURRENT.resume).location}; }
+function badgeClass(s){ return s>=66?"b-hi":s>=40?"b-mid":"b-lo"; }
+function renderJobs(list){
+  const wrap=$("#jobResults"); wrap.innerHTML="";
+  if(!list.length){ wrap.innerHTML='<p class="hint">No closely-matching USA jobs found. Try broader keywords, change/clear the State, or paste a specific job above.</p>'; return 0; }
+  list.forEach(j=>{ const d=document.createElement("div"); d.className="job"; const left=document.createElement("div");
+    const remTag=isRemote(j)?'<span class="tag tag-rem">Remote</span>':'';
+    left.innerHTML=`<div class="t">${escapeHtml(j.title)}${remTag}</div><div class="s">${escapeHtml(j.company||"—")} • ${escapeHtml(j.location||"")} <span class="tag tag-src">${escapeHtml(j.source)}</span></div>${j.url?`<div class="s"><a href="${escapeHtml(j.url)}" target="_blank" rel="noopener">↗ View job posting</a></div>`:""}${j._reason?`<div class="why">“${escapeHtml(j._reason)}”</div>`:""}`;
+    const right=document.createElement("div"); right.style.display="flex"; right.style.gap="10px"; right.style.alignItems="center";
+    const b=document.createElement("span"); b.className="badge "+badgeClass(j._score); b.textContent=j._score+(j._reason?"% fit":"% match");
+    const go=document.createElement("button"); go.className="btn btn-sm"; go.textContent="Tailor →"; go.onclick=()=>tailorFor(j);
+    right.appendChild(b); right.appendChild(go); d.appendChild(left); d.appendChild(right); wrap.appendChild(d); });
+  return list.length;
+}
+async function ensureProfile(statusEl){
+  if(!aiProvider()) return null; if(CURRENT.profile) return CURRENT.profile; if(!CURRENT.resume.trim()) return null;
+  try{ if(statusEl) statusEl.innerHTML='<span class="spinner"></span>AI is reading your whole resume…';
+    CURRENT.profile=await aiProfile(CURRENT.resume);
+    if(CURRENT.profile){ fillContactFields({name:CURRENT.profile.name,email:CURRENT.profile.email,phone:CURRENT.profile.phone}, false);
+      const p=CURRENT.profile; const titles=Array.isArray(p.search_queries)?p.search_queries.slice(0,3):[]; const sk=Array.isArray(p.core_skills)?p.core_skills.slice(0,12):[];
+      $("#aiProfileBox").innerHTML=`<b>AI read your resume as:</b> ${escapeHtml(p.headline||"")}${p.seniority?(" ("+escapeHtml(p.seniority)+")"):""}.`+(titles.length?` <b>Searching titles:</b> ${escapeHtml(titles.join(", "))}.`:"")+(sk.length?`<br><span class="muted">Key skills the AI found: ${escapeHtml(sk.join(", "))}</span>`:""); }
+    return CURRENT.profile;
+  }catch(e){ console.warn("profile failed",e); return null; }
+}
+function setDLEnabled(on){ $$("#outCard .dl").forEach(b=>b.disabled=!on); }
+function placeholderDoc(msg){ return `<!DOCTYPE html><html><body style="font-family:'Segoe UI',Arial,sans-serif;color:#64748b;padding:26px;font-size:14px">${msg}</body></html>`; }
+
+async function tailorFor(job){
+  refreshResumeMeta();
+  if(!CURRENT.resume.trim()){ alert("Please add your resume in Step 1 first."); window.scrollTo({top:0,behavior:"smooth"}); return; }
+  CURRENT.job=job; const contact=currentContact();
+  $("#outCard").classList.remove("hidden");
+  $("#outFor").innerHTML=`Tailored for <b>${escapeHtml(job.title)}</b>${job.company?(" at <b>"+escapeHtml(job.company)+"</b>"):""}${job.source?(' <span class="tag tag-src">'+escapeHtml(job.source)+'</span>'):''}.`;
+  setDLEnabled(false);
+  $("#frameResume").srcdoc=placeholderDoc("✨ Tailoring your résumé from your full resume…");
+  $("#frameCover").srcdoc=placeholderDoc("✨ Writing your cover letter…");
+  $("#outApply").textContent="Preparing…";
+  $("#outCard").scrollIntoView({behavior:"smooth"});
+  let data=null, fitNotes="";
+  if(aiProvider()){ try{ data=await aiTailorResume(CURRENT.resume, contact, job); }catch(e){ console.warn("AI tailor failed",e); $("#searchStatus").innerHTML='<span class="err">AI write failed ('+escapeHtml(String(e.message||e)).slice(0,120)+') — used basic mode.</span>'; } }
+  if(!data){ data=fallbackData(CURRENT.resume, contact, job); }
+  // backfill contact from AI-extracted data
+  fillContactFields({name:data.name,email:data.email,phone:data.phone}, false);
+  data.name=$("#cName").value.trim()||data.name; data.email=$("#cEmail").value.trim()||data.email; data.phone=$("#cPhone").value.trim()||data.phone;
+  const c2=currentContact();
+  const R=renderResume(data), C=renderCover(data, c2);
+  const baseApply=buildApply(job);
+  CURRENT.out={resumeHTML:R.html, resumeText:R.text, coverHTML:C.html, coverText:C.text, apply:baseApply};
+  $("#frameResume").srcdoc=R.html; $("#frameCover").srcdoc=C.html;
+  $("#outGap").innerHTML=""; $("#outGap").appendChild(buildGap(CURRENT.skills, job, fitNotes||(data&&data.fit_notes)));
+  setDLEnabled(true);
+  // 50 tailored interview questions appended to How-to-apply
+  $("#outApply").textContent=baseApply+(aiProvider()?"\n\n⏳ Generating 50 tailored interview questions…":"");
+  let qs=""; if(aiProvider()){ try{ qs=await aiInterviewQuestions(CURRENT.resume, job); }catch(e){ console.warn("questions failed",e); } }
+  if(!qs || qs.split(/\n/).filter(x=>/^\s*\d+[.)]/.test(x)).length<20) qs=fallbackQuestions(job, CURRENT.skills);
+  CURRENT.out.apply=baseApply+"\n\n══════════════════════════════════════════\n50 LIKELY INTERVIEW QUESTIONS (tailored to this job)\n══════════════════════════════════════════\n\n"+qs;
+  if(CURRENT.job===job) $("#outApply").textContent=CURRENT.out.apply;
+}
+
+/* ---------- Downloads (instant) ---------- */
+function fname(){ return ((CURRENT.out&&CURRENT.job&&($("#cName").value))||"application").replace(/[^a-z0-9]+/gi,"_"); }
+function blobDownload(content,filename,mime){ const blob=new Blob([content],{type:mime}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},800); }
+function downloadWord(which){ const html=CURRENT.out[which+"HTML"]; if(!html) return; const label=which==="resume"?"Resume":"Cover_Letter"; blobDownload(html, `${fname()}_${label}.doc`, "application/msword"); }
+function downloadPDF(which){ const f=$("#frame"+cap(which)); if(!f) return; try{ f.contentWindow.focus(); f.contentWindow.print(); }
+  catch(e){ const html=CURRENT.out[which+"HTML"]; const w=window.open("","_blank"); if(w){ w.document.open(); w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>w.print(),300); } } }
+function downloadTxt(which){ const text=(which==="apply")?CURRENT.out.apply:CURRENT.out[which+"Text"]; blobDownload(text||"", `${fname()}_How_To_Apply.txt`, "text/plain"); }
+function copyText(which){ const text=(which==="apply")?CURRENT.out.apply:CURRENT.out[which+"Text"]; navigator.clipboard.writeText(text||"").then(()=>{},()=>{}); }
+function exportJobsExcel(){ const jobs=CURRENT.lastResults||[]; if(!jobs.length){ alert("Run a search first."); return; }
+  const cols=["Title","Company","Location","Source","Remote","Fit %","Why (AI match)","Link"];
+  let html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"></head><body><table border="1"><tr>'+cols.map(c=>'<th>'+escapeHtml(c)+'</th>').join("")+'</tr>';
+  jobs.forEach(j=>{ const cells=[j.title,j.company,j.location,(j.source||"").replace(/^via /,""),(isRemote(j)?"Yes":"No"),(j._score!=null?j._score:""),(j._reason||""),(j.url||"")];
+    html+='<tr>'+cells.map(c=>'<td>'+escapeHtml(String(c==null?"":c))+'</td>').join("")+'</tr>'; });
+  html+='</table></body></html>';
+  blobDownload(html,"JobTailor_jobs.xls","application/vnd.ms-excel"); }
+
+/* ---------- File reading ---------- */
+$("#resumeFile").addEventListener("change", async (e)=>{ const f=e.target.files[0]; if(!f) return; const name=f.name.toLowerCase();
+  try{
+    if(name.endsWith(".pdf")){ await ensureScript("pdfjs","https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"); window.pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const buf=await f.arrayBuffer(); const pdf=await window.pdfjsLib.getDocument({data:buf}).promise; let text="";
+      for(let pi=1;pi<=pdf.numPages;pi++){ const pg=await pdf.getPage(pi); const c=await pg.getTextContent(); text+=c.items.map(i=>i.str).join(" ")+"\n"; }
+      $("#resumeText").value=text.trim(); fillContactFields(extractContact(text), true); refreshResumeMeta();
+    } else if(name.endsWith(".docx")){ await ensureScript("mammoth","https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
+      const buf=await f.arrayBuffer(); const r=await window.mammoth.extractRawText({arrayBuffer:buf}); $("#resumeText").value=(r.value||"").trim(); fillContactFields(extractContact(r.value||""), true); refreshResumeMeta();
+    } else if(name.endsWith(".doc")){ alert("Older .doc files can't be read directly. Open in Word and “Save As → .docx”, or paste the text.");
+    } else { const text=await f.text(); $("#resumeText").value=text; fillContactFields(extractContact(text), true); refreshResumeMeta(); }
+  }catch(err){ console.warn(err); alert("Couldn't read that file automatically. Please paste your resume text instead."); }
+});
+function ensureScript(flag,src){ return new Promise((res,rej)=>{ if((flag==="pdfjs"&&window.pdfjsLib)||(flag==="mammoth"&&window.mammoth)) return res(); const s=document.createElement("script"); s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error(flag+" load failed")); document.head.appendChild(s); }); }
+
+/* ---------- Settings UI ---------- */
+function applySettingsToUI(){ $("#rapidKey").value=settings.rapidKey||""; $("#aiKey").value=settings.geminiKey||""; $("#claudeKey").value=settings.claudeKey||""; $("#provider").value=settings.provider||"auto"; $("#claudeModel").value=settings.claudeModel||"claude-haiku-4-5-20251001"; $("#useAI").checked=settings.useAI!==false; }
+function readSettingsFromUI(){ settings.rapidKey=$("#rapidKey").value.trim(); settings.geminiKey=$("#aiKey").value.trim(); settings.claudeKey=$("#claudeKey").value.trim(); settings.provider=$("#provider").value; settings.claudeModel=$("#claudeModel").value; settings.useAI=$("#useAI").checked; }
+function friendlyAIError(msg){ msg=String(msg||"");
+  if(/429|quota|RESOURCE_EXHAUSTED|rate.?limit|exhausted/i.test(msg)) return "Free-tier limit reached. Gemini's free tier allows about 10 requests/minute and 500/day — wait a minute (it also resets daily), or switch to a Claude key.";
+  if(/401|403|API_KEY_INVALID|PERMISSION|invalid.*key|unauthor/i.test(msg)) return "The API key was rejected — re-check it, or create a new one and paste it again.";
+  if(/404|not found|is not supported|model/i.test(msg)) return "The AI model wasn't found (it may have changed) — let the developer know.";
+  if(/Failed to fetch|NetworkError|ENOTFOUND|TypeError|CORS|blocked/i.test(msg)) return "Couldn't reach the AI service — check your internet, or a browser extension/ad-blocker may be blocking it. Hosting on GitHub Pages also helps.";
+  return msg.slice(0,160); }
+function friendlyJobsError(msg){ msg=String(msg||"");
+  if(/abort|timed?\s*out|timeout/i.test(msg)) return "The big-sites search timed out (JSearch was slow this time). Click Find jobs again — it's usually fast on the second try.";
+  if(/429|quota|exceeded|too many/i.test(msg)) return "Monthly free limit reached (JSearch Basic is ~200 searches/month). It resets monthly — or upgrade the plan on RapidAPI.";
+  if(/401|403|not subscribed|forbidden|unauthor|invalid/i.test(msg)) return "Key rejected or not subscribed — on RapidAPI, open JSearch and click Subscribe on the Basic (Free) plan, then copy the X-RapidAPI-Key again.";
+  if(/404/.test(msg)) return "Endpoint not found. JSearch changed its API (now /search-v2) — make sure you're using the latest version of this app. Also confirm you clicked Subscribe on the JSearch Basic (Free) plan at rapidapi.com.";
+  if(/Failed to fetch|NetworkError|CORS|blocked|TypeError/i.test(msg)) return "Couldn't reach RapidAPI — check your internet, or a browser extension/ad-blocker may be blocking it.";
+  return msg.slice(0,160); }
+async function checkJSearch(){ return (await jsearchRaw("software engineer in United States")).length; }
+
+/* ---------- Wire up ---------- */
+$("#resumeText").addEventListener("input", debounce(refreshResumeMeta,400));
+$("#manualToggle").addEventListener("click", ()=> $("#manualBox").classList.toggle("hidden"));
+$("#useManualBtn").addEventListener("click", ()=>{ const desc=$("#mDesc").value.trim(); if(!desc){ alert("Please paste the job description."); return; }
+  const title=$("#mTitle").value.trim()||"Target Role"; tailorFor({title,company:$("#mCompany").value.trim(),location:"",url:$("#mUrl").value.trim(),description:desc,source:"Pasted by you",remote:isRemote({title,description:desc})}); });
+["#rapidKey","#aiKey","#claudeKey","#provider","#claudeModel","#useAI"].forEach(sel=>$(sel).addEventListener("change", ()=>{ readSettingsFromUI(); saveSettings(); }));
+$("#saveKeys").addEventListener("click", ()=>{ readSettingsFromUI(); saveSettings(); const m=$("#savedMsg"); m.textContent="✓ Saved"; m.classList.remove("hidden"); setTimeout(()=>m.classList.add("hidden"),1800); });
+$("#clearKeys").addEventListener("click", ()=>{ try{ localStorage.removeItem("jobtailor"); }catch(e){} settings.rapidKey=""; settings.geminiKey=""; settings.claudeKey=""; applySettingsToUI(); const m=$("#savedMsg"); m.textContent="✓ Keys cleared from this browser"; m.classList.remove("hidden"); setTimeout(()=>{ m.classList.add("hidden"); m.textContent="✓ Saved"; },2200); });
+$("#checkAI").addEventListener("click", async ()=>{ readSettingsFromUI(); saveSettings(); const m=$("#aiStatus");
+  if(!aiProvider()){ m.innerHTML='<span class="err">No AI is active.</span> Add a Gemini or Claude key above and make sure “Use AI” is checked, then click this again.'; return; }
+  m.innerHTML='<span class="spinner"></span>Testing your '+aiProvider()+' key…';
+  try{ await aiComplete("Reply with the single word OK.",{max_tokens:8}); m.innerHTML='<span class="ok">✓ '+aiProvider()+' is connected and working.</span> Job matching and tailoring will use AI.'; }
+  catch(e){ m.innerHTML='<span class="err">✗ '+aiProvider()+' problem:</span> '+escapeHtml(friendlyAIError(String(e.message||e))); } });
+$("#checkJobs").addEventListener("click", async ()=>{ readSettingsFromUI(); saveSettings(); const m=$("#jobsStatus");
+  if(!(settings.rapidKey||"").trim()){ m.innerHTML='<span class="warn">No RapidAPI key set.</span> The app still searches free sources (Jobicy, The Muse, Remotive), but those are <b>tech-focused</b>. Add a free RapidAPI/JSearch key to cover Indeed, LinkedIn, ZipRecruiter and <b>all industries</b>.'; return; }
+  m.innerHTML='<span class="spinner"></span>Testing the big job sites (JSearch)…';
+  try{ const n=await checkJSearch(); m.innerHTML='<span class="ok">✓ Big job sites connected.</span> Returned '+n+' jobs for a test search — Indeed/LinkedIn/ZipRecruiter are available.'; }
+  catch(e){ const msg=String(e.message||e); m.innerHTML='<span class="err">✗ Big job sites problem:</span> '+escapeHtml(/NO_KEY/.test(msg)?"No key set.":friendlyJobsError(msg))+'<br><span class="muted" style="font-size:11px">Raw response (copy this to share): '+escapeHtml(msg.slice(0,300))+'</span>'; } });
+$("#findBtn").addEventListener("click", async ()=>{
+  refreshResumeMeta(); readSettingsFromUI();
+  const st=$("#searchStatus"); const btn=$("#findBtn"); btn.disabled=true; $("#jobResults").innerHTML=""; $("#exportRow").classList.add("hidden");
+  try{
+    if(!(settings.rapidKey||"").trim()){ st.innerHTML='<span class="err">Job search needs your free RapidAPI key.</span> It now uses Indeed, LinkedIn, ZipRecruiter, Glassdoor &amp; Monster (via JSearch). Add your key in ⚙️ Settings → Check job sites, or use “Or paste a specific job”.'; $("#aiBanner").innerHTML=""; return; }
+    const profile=await ensureProfile(st);
+    let queries=[]; const typed=$("#kw").value.trim();
+    if(typed) queries=[typed];
+    else if(profile && profile.search_queries && profile.search_queries.length) queries=profile.search_queries;
+    else if(CURRENT.skills.length) queries=[CURRENT.skills.slice(0,3).join(" ")];
+    else { const g=guessRole(CURRENT.resume); queries=[g||"developer"]; }
+    const kw=queries.join(", ");
+    const opts={state:$("#stateInput").value.trim(),includeRemote:$("#remoteChk").checked};
+    const usingBig=" via Indeed, LinkedIn, ZipRecruiter, Glassdoor &amp; Monster";
+    st.innerHTML='<span class="spinner"></span>Searching USA jobs'+usingBig+'…'+((settings.rapidKey||"").trim()?' <span class="muted">(big sites can take ~20s)</span>':'');
+    const {jobs,ok,failed,failReasons}=await searchAllSources(queries, opts);
+    let inUSA=jobs.filter(j=>passesLocation(j,opts));
+    if(!inUSA.length){ st.innerHTML='<span class="err">No USA jobs came back.</span> Networks/extensions can block the sites, your big-sites key may be missing/over quota, or filters are too narrow. Use “Or paste a specific job” above.'; btn.disabled=false; return; }
+    // Relevance to THIS resume: how many of the candidate's real skills (AI-extracted when available) appear in each job
+    const eff=effectiveResumeSkills();
+    inUSA.forEach(j=>{ j._overlap=overlapCount(j, eff); j._kw=scoreMatch(CURRENT.skills,(j.description||"")+" "+(j.title||"")).score; });
+    let candidates=inUSA.slice().sort((a,b)=>(b._overlap-a._overlap)||(b._kw-a._kw)).slice(0,30);
+    let display, aiFailed=false;
+    if(aiProvider()){
+      st.innerHTML='<span class="spinner"></span>AI is ranking the best-matched jobs by fit to your whole resume…';
+      try{ const ranked=await aiRankJobs(profile,CURRENT.resume,candidates);
+        const byI={}; (ranked||[]).forEach(r=>{ if(typeof r.i==="number") byI[r.i]=r; });
+        candidates.forEach((j,i)=>{ if(byI[i]){ j._score=Math.max(0,Math.min(100,Math.round(byI[i].score))); j._reason=byI[i].reason||""; } else { j._score=j._kw; } });
+      }catch(e){ aiFailed=true; console.warn("rank failed",e); candidates.forEach(j=>j._score=j._kw); st.innerHTML='<span class="warn">AI ranking unavailable:</span> '+escapeHtml(friendlyAIError(String(e.message||e))); }
+      candidates.sort((a,b)=>b._score-a._score);
+      display=candidates.filter(j=>j._score>=45); if(display.length<8) display=candidates.slice(0,12); display=display.slice(0,25);
+    } else {
+      candidates.forEach(j=>j._score=j._kw);
+      display=candidates.filter(j=>j._overlap>=1); if(display.length<6) display=candidates.slice(0,12);
+      display.sort((a,b)=>(b._overlap-a._overlap)||(b._score-a._score)); display=display.slice(0,20);
+    }
+    let bannerHtml="";
+    if(!aiProvider()) bannerHtml+='<div class="bnr">⚠ AI matching is OFF, so these are basic keyword matches and may be less relevant. Open ⚙️ Settings, confirm your Gemini or Claude key is filled in, and click <b>Check AI connection</b>.</div>';
+    else if(aiFailed) bannerHtml+='<div class="bnr">⚠ AI matching could not run just now (often a free-tier rate limit or daily quota) — showing keyword matches. Click <b>Check AI connection</b> in ⚙️ Settings for the exact reason.</div>';
+    if(CURRENT.skills.length===0 && !(settings.rapidKey||"").trim()) bannerHtml+='<div class="bnr">⚠ Your résumé didn’t match the free sources’ tech focus, and no big-sites key is set — so results may be off-field. Add a free <b>RapidAPI</b> key in ⚙️ Settings (covers Indeed/LinkedIn and all industries), then click <b>Check job sites</b>.</div>';
+    $("#aiBanner").innerHTML=bannerHtml;
+    const shown=renderJobs(display);
+    CURRENT.lastResults=display; $("#exportRow").classList.toggle("hidden", display.length===0);
+    let msg=`<span class="ok">Showing ${shown} best-fit USA jobs</span> (from ${inUSA.length} found for “${escapeHtml(kw)}” via ${ok.join(", ")||"—"})${aiProvider()?", ranked by AI fit to your whole resume":" by relevance to your resume"}.`;
+    if(failed.length) msg+=` <span class="muted">(couldn't reach: ${failed.join(", ")})</span>`;
+    if(failReasons.length) msg+=`<br><span class="muted" style="font-size:11px">Why: ${escapeHtml(failReasons.join("   |   ")).slice(0,320)}</span>`;
+    st.innerHTML=msg;
+  }catch(e){ st.innerHTML='<span class="err">Search failed: '+escapeHtml(String(e.message||e)).slice(0,140)+'.</span> Try “Or paste a specific job”.'; }
+  finally{ btn.disabled=false; }
+});
+$$(".tab").forEach(t=>t.addEventListener("click",()=>{ $$(".tab").forEach(x=>x.classList.remove("active")); t.classList.add("active"); const k=t.dataset.tab; $$(".panel").forEach(p=>p.classList.toggle("active",p.dataset.panel===k)); }));
+function debounce(fn,ms){ let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a),ms); }; }
+
+/* ---------- Init ---------- */
+loadSettings(); applySettingsToUI(); setDLEnabled(false); $("#exportBtn").addEventListener("click", exportJobsExcel);
+window.downloadWord=downloadWord; window.downloadPDF=downloadPDF; window.downloadTxt=downloadTxt; window.copyText=copyText;
+</script>
+</body>
+</html>
