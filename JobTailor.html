@@ -97,6 +97,16 @@
     <p class="hint">Free at <b>rapidapi.com</b> → search <b>JSearch</b> → Subscribe to <b>Basic (Free)</b> → copy the <b>X-RapidAPI-Key</b>.</p>
     <div><button class="btn-ghost btn btn-sm" id="checkJobs" type="button">Check job sites</button></div>
     <div id="jobsStatus" class="hint" style="margin-top:8px"></div>
+    <div class="subhead">More job sources (optional, free)</div>
+    <div class="row">
+      <div><label for="adzunaId">Adzuna App ID</label><input type="password" id="adzunaId" placeholder="from developer.adzuna.com" autocomplete="off" /></div>
+      <div><label for="adzunaKey">Adzuna App Key</label><input type="password" id="adzunaKey" placeholder="from developer.adzuna.com" autocomplete="off" /></div>
+    </div>
+    <div class="row">
+      <div><label for="usajobsKey">USAJobs API key</label><input type="password" id="usajobsKey" placeholder="from developer.usajobs.gov" autocomplete="off" /></div>
+      <div><label for="usajobsEmail">USAJobs email <span class="muted">(their API requires it)</span></label><input type="text" id="usajobsEmail" placeholder="your-email@example.com" autocomplete="off" /></div>
+    </div>
+    <p class="hint">Adzuna adds all-industry US listings; USAJobs adds federal jobs. <b>Note:</b> these APIs are built for servers, so a browser may block them (Adzuna sometimes works; USAJobs usually needs a helper). If a source fails, the “Why:” line under your results shows the exact reason.</p>
     <div style="margin-top:12px"><button class="btn-ghost btn btn-sm" id="saveKeys" type="button">Save on this computer</button> <button class="btn-ghost btn btn-sm" id="clearKeys" type="button">Clear saved keys</button> <button class="btn-ghost btn btn-sm" id="checkAI" type="button">Check AI connection</button><span class="saved hidden" id="savedMsg">✓ Saved</span></div>
     <div id="aiStatus" class="hint" style="margin-top:8px"></div>
     <p class="hint" style="margin-top:6px">Keys live only in this browser — they are never part of the shared file. Use <b>Clear saved keys</b> before sharing your screen or a computer.</p>
@@ -152,6 +162,7 @@
   <div class="card hidden" id="outCard">
     <h2><span class="step">3</span>Your tailored application</h2>
     <p class="hint" id="outFor"></p>
+    <div class="toolbar" style="margin:2px 0 12px"><button class="btn dl" id="downloadAllBtn">⬇ Download all 3 for this job (résumé + cover letter + how-to-apply) — one ZIP</button></div>
     <div class="tabs" style="margin-top:6px">
       <div class="tab active" data-tab="resume">Tailored résumé</div>
       <div class="tab" data-tab="cover">Cover letter</div>
@@ -192,7 +203,7 @@ const $$ = (s)=>Array.from(document.querySelectorAll(s));
 const cap = (w)=>w.charAt(0).toUpperCase()+w.slice(1);
 
 /* ---------- Settings ---------- */
-const settings = {rapidKey:"", geminiKey:"", claudeKey:"", provider:"auto", claudeModel:"claude-haiku-4-5-20251001", useAI:true};
+const settings = {rapidKey:"", geminiKey:"", claudeKey:"", adzunaId:"", adzunaKey:"", usajobsKey:"", usajobsEmail:"", provider:"auto", claudeModel:"claude-haiku-4-5-20251001", useAI:true};
 /* ═══════════ PERSONAL USE: paste your own keys between the quotes to bake them into this file. ═══════════
    If you fill these in, DO NOT share this file — the keys would travel with it. Leave blank to use the Settings boxes. */
 const HARDCODED = { rapidKey:"", geminiKey:"", claudeKey:"" };
@@ -286,22 +297,38 @@ function pickJobs(d){ if(!d) return []; if(Array.isArray(d)) return d;
     if(typeof o==="object"){ for(const k in o){ walk(o[k],depth+1); if(found.length) return; } } })(d,0);
   return found; }
 // JSearch raw fetch — current /search-v2 endpoint, falling back to legacy /search
-async function jsearchRaw(q){ const key=(settings.rapidKey||"").trim(); if(!key) throw new Error("NO_KEY");
+async function jsearchRaw(q, remoteOnly){ const key=(settings.rapidKey||"").trim(); if(!key) throw new Error("NO_KEY");
   const headers={"X-RapidAPI-Key":key,"X-RapidAPI-Host":"jsearch.p.rapidapi.com"};
-  const d=await getJSON("https://jsearch.p.rapidapi.com/search-v2?query="+encodeURIComponent(q)+"&country=us",{ms:25000,headers});
+  let url="https://jsearch.p.rapidapi.com/search-v2?query="+encodeURIComponent(q)+"&country=us"; if(remoteOnly) url+="&work_from_home=true";
+  const d=await getJSON(url,{ms:25000,headers});
   return pickJobs(d); }
 function jsQuery(kw){ let q=(kw||"developer").replace(/[,;]+/g," ").replace(/\s+/g," ").trim(); q=q.replace(/\s+in\s+.*$/i,""); return q.split(" ").slice(0,4).join(" ")||"developer"; }
-async function fetchJSearch(kw,opts,publisher){ if(!(settings.rapidKey||"").trim()) return [];
-  const f=stateForms(opts.state); let q=jsQuery(kw); q+= f ? (" in "+f.name) : " in United States"; if(publisher) q+=" via "+publisher;
-  const arr=await jsearchRaw(q);
+async function fetchJSearch(kw,opts,publisher,remoteOnly){ if(!(settings.rapidKey||"").trim()) return [];
+  const f=remoteOnly?null:stateForms(opts.state); let q=jsQuery(kw); q+= f ? (" in "+f.name) : " in United States"; if(publisher) q+=" via "+publisher;
+  const arr=await jsearchRaw(q, remoteOnly);
   return (arr||[]).map(j=>({title:j.job_title||"",company:j.employer_name||"",location:j.job_is_remote?"Remote (US)":([j.job_city,j.job_state].filter(Boolean).join(", ")||j.job_country||""),url:j.job_apply_link||j.job_google_link||"",description:j.job_description||"",source:j.job_publisher?("via "+j.job_publisher):"Big sites",remote:!!j.job_is_remote,country:j.job_country||""})); }
+async function fetchAdzuna(kw,opts){ const id=(settings.adzunaId||"").trim(), key=(settings.adzunaKey||"").trim(); if(!id||!key) return [];
+  const f=stateForms(opts.state);
+  const params=new URLSearchParams({app_id:id, app_key:key, results_per_page:"50", "content-type":"application/json", what:jsQuery(kw)}); if(f) params.set("where", f.name);
+  const d=await getJSON("https://api.adzuna.com/v1/api/jobs/us/search/1?"+params.toString(), {ms:15000});
+  return (d.results||[]).map(j=>({title:j.title||"", company:(j.company&&j.company.display_name)||"", location:(j.location&&j.location.display_name)||"", url:j.redirect_url||"", description:stripHtml(j.description||""), source:"via Adzuna", remote:/remote|work from home/i.test(((j.location&&j.location.display_name)||"")+" "+(j.title||"")), country:"US"})); }
+async function fetchUSAJobs(kw,opts){ const key=(settings.usajobsKey||"").trim(); if(!key) return [];
+  const f=stateForms(opts.state); const params=new URLSearchParams({Keyword:jsQuery(kw), ResultsPerPage:"50"}); if(f) params.set("LocationName", f.name);
+  const headers={"Authorization-Key":key}; const em=(settings.usajobsEmail||"").trim(); if(em) headers["User-Agent"]=em;
+  const d=await getJSON("https://data.usajobs.gov/api/search?"+params.toString(), {ms:15000, headers});
+  const items=(d.SearchResult&&d.SearchResult.SearchResultItems)||[];
+  return items.map(it=>{ const p=it.MatchedObjectDescriptor||{}; const loc=p.PositionLocationDisplay||((p.PositionLocation&&p.PositionLocation[0]&&p.PositionLocation[0].LocationName))||"";
+    return {title:p.PositionTitle||"", company:p.OrganizationName||p.DepartmentName||"U.S. Federal Government", location:loc, url:p.PositionURI||((p.ApplyURI&&p.ApplyURI[0])||""), description:stripHtml((p.UserArea&&p.UserArea.Details&&p.UserArea.Details.JobSummary)||p.QualificationSummary||""), source:"via USAJobs", remote:/remote|telework/i.test(loc+" "+(p.PositionTitle||"")), country:"US"}; }); }
 async function searchAllSources(queries,opts){
   let qs=(Array.isArray(queries)?queries:[queries]).map(s=>String(s||"").trim()).filter(Boolean).slice(0,2); if(!qs.length) qs=["developer"];
   const tasks=[];
   if((settings.rapidKey||"").trim()){
     qs.forEach((q,i)=>tasks.push([(i===0?"Big boards":("Big boards: "+q)),fetchJSearch(q,opts)]));
+    if(opts.includeRemote) tasks.push(["Remote (US)",fetchJSearch(qs[0],opts,null,true)]);
     tasks.push(["Monster",fetchJSearch(qs[0],opts,"monster")]);
   }
+  if((settings.adzunaId||"").trim() && (settings.adzunaKey||"").trim()) tasks.push(["Adzuna",fetchAdzuna(qs[0],opts)]);
+  if((settings.usajobsKey||"").trim()) tasks.push(["USAJobs",fetchUSAJobs(qs[0],opts)]);
   const settled=await Promise.allSettled(tasks.map(t=>t[1])); let jobs=[],ok=[],failed=[],failReasons=[];
   settled.forEach((r,i)=>{ const n=tasks[i][0]; if(r.status==="fulfilled"&&r.value.length){ jobs=jobs.concat(r.value); ok.push(n);} else if(r.status==="rejected"){ failed.push(n); failReasons.push(n+" → "+String((r.reason&&r.reason.message)||r.reason||"no response").slice(0,150)); } });
   const seen=new Set(); jobs=jobs.filter(j=>{ const k=(j.title+"@"+j.company).toLowerCase(); if(seen.has(k))return false; seen.add(k); return j.title; });
@@ -512,6 +539,23 @@ async function tailorFor(job){
 /* ---------- Downloads (instant) ---------- */
 function fname(){ return ((CURRENT.out&&CURRENT.job&&($("#cName").value))||"application").replace(/[^a-z0-9]+/gi,"_"); }
 function blobDownload(content,filename,mime){ const blob=new Blob([content],{type:mime}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},800); }
+function loadScriptOnce(test, src){ return new Promise((res,rej)=>{ if(test()) return res(); const s=document.createElement("script"); s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error("load failed")); document.head.appendChild(s); }); }
+async function downloadAllZip(){ if(!(CURRENT.out&&CURRENT.out.resumeHTML)){ alert("Tailor a job first."); return; }
+  const nm=((CURRENT.contact&&CURRENT.contact.name)||"application").replace(/[^a-z0-9]+/gi,"_");
+  const jt=((CURRENT.job&&CURRENT.job.title)||"job").replace(/[^a-z0-9]+/gi,"_").slice(0,40);
+  const base=nm+"_"+jt;
+  try{
+    await loadScriptOnce(()=>window.JSZip,"https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");
+    const zip=new window.JSZip();
+    zip.file(base+"_Resume.doc", CURRENT.out.resumeHTML);
+    zip.file(base+"_Cover_Letter.doc", CURRENT.out.coverHTML);
+    zip.file(base+"_How_To_Apply.txt", CURRENT.out.apply||"");
+    const blob=await zip.generateAsync({type:"blob"});
+    blobDownload(blob, base+".zip", "application/zip");
+  }catch(e){ console.warn("zip unavailable, downloading the 3 files separately",e);
+    downloadWord("resume"); setTimeout(()=>downloadWord("cover"),500); setTimeout(()=>downloadTxt("apply"),1000);
+  }
+}
 function downloadWord(which){ const html=CURRENT.out[which+"HTML"]; if(!html) return; const label=which==="resume"?"Resume":"Cover_Letter"; blobDownload(html, `${fname()}_${label}.doc`, "application/msword"); }
 function downloadPDF(which){ const f=$("#frame"+cap(which)); if(!f) return; try{ f.contentWindow.focus(); f.contentWindow.print(); }
   catch(e){ const html=CURRENT.out[which+"HTML"]; const w=window.open("","_blank"); if(w){ w.document.open(); w.document.write(html); w.document.close(); w.focus(); setTimeout(()=>w.print(),300); } } }
@@ -541,8 +585,8 @@ $("#resumeFile").addEventListener("change", async (e)=>{ const f=e.target.files[
 function ensureScript(flag,src){ return new Promise((res,rej)=>{ if((flag==="pdfjs"&&window.pdfjsLib)||(flag==="mammoth"&&window.mammoth)) return res(); const s=document.createElement("script"); s.src=src; s.onload=()=>res(); s.onerror=()=>rej(new Error(flag+" load failed")); document.head.appendChild(s); }); }
 
 /* ---------- Settings UI ---------- */
-function applySettingsToUI(){ $("#rapidKey").value=settings.rapidKey||""; $("#aiKey").value=settings.geminiKey||""; $("#claudeKey").value=settings.claudeKey||""; $("#provider").value=settings.provider||"auto"; $("#claudeModel").value=settings.claudeModel||"claude-haiku-4-5-20251001"; $("#useAI").checked=settings.useAI!==false; }
-function readSettingsFromUI(){ settings.rapidKey=$("#rapidKey").value.trim(); settings.geminiKey=$("#aiKey").value.trim(); settings.claudeKey=$("#claudeKey").value.trim(); settings.provider=$("#provider").value; settings.claudeModel=$("#claudeModel").value; settings.useAI=$("#useAI").checked; }
+function applySettingsToUI(){ $("#rapidKey").value=settings.rapidKey||""; $("#aiKey").value=settings.geminiKey||""; $("#claudeKey").value=settings.claudeKey||""; $("#provider").value=settings.provider||"auto"; $("#claudeModel").value=settings.claudeModel||"claude-haiku-4-5-20251001"; $("#useAI").checked=settings.useAI!==false; if($("#adzunaId")){ $("#adzunaId").value=settings.adzunaId||""; $("#adzunaKey").value=settings.adzunaKey||""; $("#usajobsKey").value=settings.usajobsKey||""; $("#usajobsEmail").value=settings.usajobsEmail||""; } }
+function readSettingsFromUI(){ settings.rapidKey=$("#rapidKey").value.trim(); settings.geminiKey=$("#aiKey").value.trim(); settings.claudeKey=$("#claudeKey").value.trim(); settings.provider=$("#provider").value; settings.claudeModel=$("#claudeModel").value; settings.useAI=$("#useAI").checked; if($("#adzunaId")){ settings.adzunaId=$("#adzunaId").value.trim(); settings.adzunaKey=$("#adzunaKey").value.trim(); settings.usajobsKey=$("#usajobsKey").value.trim(); settings.usajobsEmail=$("#usajobsEmail").value.trim(); } }
 function friendlyAIError(msg){ msg=String(msg||"");
   if(/429|quota|RESOURCE_EXHAUSTED|rate.?limit|exhausted/i.test(msg)) return "Free-tier limit reached. Gemini's free tier allows about 10 requests/minute and 500/day — wait a minute (it also resets daily), or switch to a Claude key.";
   if(/401|403|API_KEY_INVALID|PERMISSION|invalid.*key|unauthor/i.test(msg)) return "The API key was rejected — re-check it, or create a new one and paste it again.";
@@ -563,7 +607,7 @@ $("#resumeText").addEventListener("input", debounce(refreshResumeMeta,400));
 $("#manualToggle").addEventListener("click", ()=> $("#manualBox").classList.toggle("hidden"));
 $("#useManualBtn").addEventListener("click", ()=>{ const desc=$("#mDesc").value.trim(); if(!desc){ alert("Please paste the job description."); return; }
   const title=$("#mTitle").value.trim()||"Target Role"; tailorFor({title,company:$("#mCompany").value.trim(),location:"",url:$("#mUrl").value.trim(),description:desc,source:"Pasted by you",remote:isRemote({title,description:desc})}); });
-["#rapidKey","#aiKey","#claudeKey","#provider","#claudeModel","#useAI"].forEach(sel=>$(sel).addEventListener("change", ()=>{ readSettingsFromUI(); saveSettings(); }));
+["#rapidKey","#aiKey","#claudeKey","#provider","#claudeModel","#useAI","#adzunaId","#adzunaKey","#usajobsKey","#usajobsEmail"].forEach(sel=>{ const el=$(sel); if(el) el.addEventListener("change", ()=>{ readSettingsFromUI(); saveSettings(); }); });
 $("#saveKeys").addEventListener("click", ()=>{ readSettingsFromUI(); saveSettings(); const m=$("#savedMsg"); m.textContent="✓ Saved"; m.classList.remove("hidden"); setTimeout(()=>m.classList.add("hidden"),1800); });
 $("#clearKeys").addEventListener("click", ()=>{ try{ localStorage.removeItem("jobtailor"); }catch(e){} settings.rapidKey=""; settings.geminiKey=""; settings.claudeKey=""; applySettingsToUI(); const m=$("#savedMsg"); m.textContent="✓ Keys cleared from this browser"; m.classList.remove("hidden"); setTimeout(()=>{ m.classList.add("hidden"); m.textContent="✓ Saved"; },2200); });
 $("#checkAI").addEventListener("click", async ()=>{ readSettingsFromUI(); saveSettings(); const m=$("#aiStatus");
@@ -580,7 +624,8 @@ $("#findBtn").addEventListener("click", async ()=>{
   refreshResumeMeta(); readSettingsFromUI();
   const st=$("#searchStatus"); const btn=$("#findBtn"); btn.disabled=true; $("#jobResults").innerHTML=""; $("#exportRow").classList.add("hidden");
   try{
-    if(!(settings.rapidKey||"").trim()){ st.innerHTML='<span class="err">Job search needs your free RapidAPI key.</span> It now uses Indeed, LinkedIn, ZipRecruiter, Glassdoor &amp; Monster (via JSearch). Add your key in ⚙️ Settings → Check job sites, or use “Or paste a specific job”.'; $("#aiBanner").innerHTML=""; return; }
+    const hasSource=(settings.rapidKey||"").trim() || ((settings.adzunaId||"").trim()&&(settings.adzunaKey||"").trim()) || (settings.usajobsKey||"").trim();
+    if(!hasSource){ st.innerHTML='<span class="err">Job search needs at least one job-site key.</span> Add a RapidAPI/JSearch key (Indeed/LinkedIn/ZipRecruiter/Glassdoor/Monster), or an Adzuna or USAJobs key in ⚙️ Settings — or use “Or paste a specific job”.'; $("#aiBanner").innerHTML=""; return; }
     const profile=await ensureProfile(st);
     let queries=[]; const typed=$("#kw").value.trim();
     if(typed) queries=[typed];
@@ -597,7 +642,7 @@ $("#findBtn").addEventListener("click", async ()=>{
     // Relevance to THIS resume: how many of the candidate's real skills (AI-extracted when available) appear in each job
     const eff=effectiveResumeSkills();
     inUSA.forEach(j=>{ j._overlap=overlapCount(j, eff); j._kw=scoreMatch(CURRENT.skills,(j.description||"")+" "+(j.title||"")).score; });
-    let candidates=inUSA.slice().sort((a,b)=>(b._overlap-a._overlap)||(b._kw-a._kw)).slice(0,30);
+    let candidates=inUSA.slice().sort((a,b)=>(b._overlap-a._overlap)||(b._kw-a._kw)).slice(0,45);
     let display, aiFailed=false;
     if(aiProvider()){
       st.innerHTML='<span class="spinner"></span>AI is ranking the best-matched jobs by fit to your whole resume…';
@@ -606,11 +651,11 @@ $("#findBtn").addEventListener("click", async ()=>{
         candidates.forEach((j,i)=>{ if(byI[i]){ j._score=Math.max(0,Math.min(100,Math.round(byI[i].score))); j._reason=byI[i].reason||""; } else { j._score=j._kw; } });
       }catch(e){ aiFailed=true; console.warn("rank failed",e); candidates.forEach(j=>j._score=j._kw); st.innerHTML='<span class="warn">AI ranking unavailable:</span> '+escapeHtml(friendlyAIError(String(e.message||e))); }
       candidates.sort((a,b)=>b._score-a._score);
-      display=candidates.filter(j=>j._score>=45); if(display.length<8) display=candidates.slice(0,12); display=display.slice(0,25);
+      display=candidates.filter(j=>j._score>=38); if(display.length<10) display=candidates.slice(0,15); display=display.slice(0,45);
     } else {
       candidates.forEach(j=>j._score=j._kw);
-      display=candidates.filter(j=>j._overlap>=1); if(display.length<6) display=candidates.slice(0,12);
-      display.sort((a,b)=>(b._overlap-a._overlap)||(b._score-a._score)); display=display.slice(0,20);
+      display=candidates.filter(j=>j._overlap>=1); if(display.length<8) display=candidates.slice(0,18);
+      display.sort((a,b)=>(b._overlap-a._overlap)||(b._score-a._score)); display=display.slice(0,40);
     }
     let bannerHtml="";
     if(!aiProvider()) bannerHtml+='<div class="bnr">⚠ AI matching is OFF, so these are basic keyword matches and may be less relevant. Open ⚙️ Settings, confirm your Gemini or Claude key is filled in, and click <b>Check AI connection</b>.</div>';
@@ -630,7 +675,7 @@ $$(".tab").forEach(t=>t.addEventListener("click",()=>{ $$(".tab").forEach(x=>x.c
 function debounce(fn,ms){ let h; return (...a)=>{ clearTimeout(h); h=setTimeout(()=>fn(...a),ms); }; }
 
 /* ---------- Init ---------- */
-loadSettings(); applySettingsToUI(); setDLEnabled(false); $("#exportBtn").addEventListener("click", exportJobsExcel);
+loadSettings(); applySettingsToUI(); setDLEnabled(false); $("#exportBtn").addEventListener("click", exportJobsExcel); $("#downloadAllBtn").addEventListener("click", downloadAllZip);
 window.downloadWord=downloadWord; window.downloadPDF=downloadPDF; window.downloadTxt=downloadTxt; window.copyText=copyText;
 </script>
 </body>

@@ -1,0 +1,105 @@
+==========================================================
+ HOW TO PUBLISH JOBTAILOR ON GITHUB  (no coding required)
+==========================================================
+
+You will do everything in your web browser. When you finish, you will have:
+  • A public page (repository) with the app and instructions, and
+  • A shareable LINK that opens the app directly in anyone's browser.
+
+Tip: Hosting on GitHub also makes the app MORE reliable than opening the
+file from your computer, because the AI and job-site connections work
+better from a real web address (https) than from a local file.
+
+You only need two files from this project:
+  • JobTailor.html   (the app)
+  • README.md        (the instructions)
+(You can also include PUBLISH-ON-GITHUB.txt if you like.)
+
+----------------------------------------------------------
+PART A — CREATE A FREE GITHUB ACCOUNT  (skip if you have one)
+----------------------------------------------------------
+1. Go to  https://github.com
+2. Click  "Sign up"  and follow the prompts (email, password, username).
+3. Verify your email when GitHub sends you a confirmation.
+
+----------------------------------------------------------
+PART B — CREATE A NEW REPOSITORY (your project's home)
+----------------------------------------------------------
+1. After signing in, click the "+" in the top-right corner, then
+   "New repository".
+2. Repository name:  jobtailor   (lowercase, no spaces)
+3. Set it to  "Public".
+4. Check  "Add a README file"  (you'll replace it in a moment).
+5. Click  "Create repository".
+
+----------------------------------------------------------
+PART C — UPLOAD THE APP FILES
+----------------------------------------------------------
+1. On your new repository page, click  "Add file"  ->  "Upload files".
+2. Drag in  JobTailor.html  and  README.md
+   (When asked to replace the existing README, that's fine — yes.)
+3. Scroll down and click  "Commit changes".
+
+You now have a public project page. People can already download
+JobTailor.html from here. Next we'll turn it into a clickable link.
+
+----------------------------------------------------------
+PART D — TURN ON GITHUB PAGES (makes the shareable link)
+----------------------------------------------------------
+1. In your repository, click  "Settings"  (top menu).
+2. In the left sidebar, click  "Pages".
+3. Under "Build and deployment" -> "Source", choose  "Deploy from a branch".
+4. Under "Branch", pick  "main"  and folder  "/ (root)", then click  "Save".
+5. Wait about 1 minute, then refresh the page. GitHub will show a green
+   message with your site address, like:
+        https://YOUR-USERNAME.github.io/jobtailor/
+
+----------------------------------------------------------
+PART E — GET AND SHARE YOUR LINK
+----------------------------------------------------------
+• Your app link will be:
+        https://YOUR-USERNAME.github.io/jobtailor/JobTailor.html
+• Share that link with friends. They open it, add their OWN free keys
+  (see README), and use it. Their keys stay in their browser.
+
+(Optional) SHORTER LINK:
+If you want the link to be just  https://YOUR-USERNAME.github.io/jobtailor/
+then rename the app file to  index.html :
+   1. In the repo, click  JobTailor.html.
+   2. Click the pencil (Edit) icon.
+   3. Change the name at the top from  JobTailor.html  to  index.html.
+   4. Click  "Commit changes".
+Now the plain folder link opens the app.
+
+----------------------------------------------------------
+UPDATING THE APP LATER
+----------------------------------------------------------
+When you have a newer JobTailor.html:
+   1. Open your repository, click the old file, click the pencil (Edit)
+      — OR use  "Add file" -> "Upload files"  and upload the new version
+        with the same name to replace it.
+   2. Click  "Commit changes".
+   3. GitHub Pages updates automatically in about a minute. Ask users to
+      refresh the page (their saved keys remain).
+
+----------------------------------------------------------
+GOOD TO KNOW
+----------------------------------------------------------
+• Your keys are NOT in the file, so uploading is safe. Friends never see
+  your keys; everyone uses their own.
+• GitHub Pages is free for public repositories.
+• If the page shows a 404 for a minute after enabling Pages, just wait and
+  refresh — it takes a moment to go live the first time.
+• To make the app private to just a few people, GitHub Pages on a free
+  account is public; for private sharing, instead email them the
+  JobTailor.html file to open locally.
+
+----------------------------------------------------------
+QUICK TROUBLESHOOTING
+----------------------------------------------------------
+• "I don't see Pages settings" -> make sure the repository is Public.
+• "The link 404s" -> wait ~1 minute and refresh; confirm Branch = main and
+  folder = / (root) under Settings -> Pages.
+• "Jobs don't load for a user" -> they likely need their free RapidAPI key,
+  or their network/ad-blocker is blocking it; they can paste a specific job
+  instead (see README).

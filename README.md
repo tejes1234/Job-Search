@@ -41,7 +41,7 @@ Open the **⚙️ "Set up once"** panel at the top of the app and add at least o
 3. Open the **Pricing** tab and **Subscribe** to the **Basic (Free)** plan (~200 searches/month).
 4. Open the **Endpoints** tab; on the right, copy the **X-RapidAPI-Key** value.
 5. Paste it into the **RapidAPI key** box.
-   *Without this, JobTailor still searches free sources (Jobicy, The Muse, Remotive).*
+   *This also powers the Monster results. Job search needs at least one job-site key — this one, or the Adzuna/USAJobs keys below.*
 
 ### 3) (Optional) Anthropic Claude — best quality, paid per use
 
@@ -51,6 +51,24 @@ Open the **⚙️ "Set up once"** panel at the top of the app and add at least o
 4. **Settings → API keys → Create Key**; copy the key (starts with `sk-ant-`, shown once).
 5. Paste it into the **Claude** box, set **Use** to *Auto* or *Claude*, and pick **Haiku** (cheapest) to start.
    *Billed per use (usually a few cents per job) to your own Anthropic account — separate from a Claude.ai subscription.*
+
+### 4) (Optional) More job sources — Adzuna & USAJobs (both free)
+
+These add extra listings via the ⚙️ **"More job sources"** section. Note: both are built for servers, so a browser sometimes blocks them — if a source fails, the **"Why:"** line under your results shows the reason.
+
+**Adzuna — all-industry US listings:**
+
+1. Go to **https://developer.adzuna.com/signup** and register (free).
+2. On your dashboard, copy your **Application ID** and **Application Key**.
+3. Paste them into the **Adzuna App ID** and **Adzuna App Key** boxes.
+
+**USAJobs — federal jobs:**
+
+1. Go to **https://developer.usajobs.gov/apirequest/** and fill out the form with your email.
+2. They email you an **Authorization Key** (your API key).
+3. Paste the key into **USAJobs API key**, and put the **same email** you registered into the **USAJobs email** box (their API requires it).
+
+> **For the fullest coverage**, connect the official **Indeed / ZipRecruiter / Dice** connectors inside Claude and search there — see *Bonus* at the bottom.
 
 ---
 
